@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PropScope — Geospatial Real Estate & Hybrid Recommendation Platform{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+
+    <!-- Navigation Bar -->
+    <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center font-bold text-slate-950 text-xl shadow-lg shadow-brand-500/20">
+                        PS
+                    </div>
+                    <div>
+                        <a href="{% url 'home' %}" class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">PropScope</a>
+                        <span class="ml-2 text-xs uppercase px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 font-semibold border border-brand-500/20">PostGIS + AI</span>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-300">
+                    <a href="{% url 'home' %}" class="hover:text-white transition">Explore Map</a>
+                    <a href="/api/v1/properties/" class="hover:text-white transition">Properties API</a>
+                    <a href="/api/v1/amenities/" class="hover:text-white transition">Amenities</a>
+                    <a href="/api/v1/recommendations/hybrid/" class="hover:text-white transition">Recommendations</a>
+                    <a href="/admin/" class="hover:text-brand-400 transition">Admin Portal</a>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <a href="/admin/" class="px-4 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-brand-600 to-emerald-500 text-slate-950 hover:opacity-90 shadow-md shadow-brand-500/20 transition">
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500">
+        <p>PropScope &copy; 2026 — Geospatial Real Estate & Hybrid Recommendation Platform. Built with Django, PostGIS, Leaflet, and Redis.</p>
+    </footer>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

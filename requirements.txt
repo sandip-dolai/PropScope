@@ -1,0 +1,22 @@
+# Core Django & GIS
+Django>=5.1,<5.2
+djangorestframework>=3.15.2
+psycopg[binary]>=3.2.0
+django-environ>=0.11.2
+django-cors-headers>=4.4.0
+Pillow>=10.4.0
+
+# Async & Caching
+redis>=5.0.8
+celery>=5.4.0
+
+# Production Server
+gunicorn>=23.0.0
+
+# HTTP & External APIs
+requests>=2.32.3
+
+# Testing
+pytest>=8.3.2
+pytest-django>=4.9.0
+factory-boy>=3.3.1

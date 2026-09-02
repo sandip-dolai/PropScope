@@ -1,11 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 from apps.properties.models import Property, PropertyStatus
 from .strategies import RuleBasedRecommendation, AIRecommendation, HybridRecommendation
 
 
 class RecommendationView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def post(self, request, mode='normal'):
         preferences = request.data.get('preferences', {})
         candidates = Property.objects.filter(status=PropertyStatus.ACTIVE)

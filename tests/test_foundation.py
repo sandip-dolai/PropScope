@@ -1,6 +1,10 @@
+# pyrefly: ignore [missing-import]
 import pytest
+# pyrefly: ignore [missing-import]
 from django.contrib.auth import get_user_model
+# pyrefly: ignore [missing-import]
 from django.contrib.gis.geos import Point
+# pyrefly: ignore [missing-import]
 from django.contrib.gis.measure import D
 from apps.accounts.models import UserRole
 from apps.properties.models import Property, PropertyStatus, PropertyType

@@ -1,136 +1,160 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Hero Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
+    <!-- Platform Hero & Status Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 pb-6 border-b border-slate-200/80 dark:border-slate-800/80 gap-4">
         <div>
-            <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-white mb-2">
-                Geospatial Property Discovery & Hybrid AI
+            <div class="flex items-center space-x-2.5 mb-1.5">
+                <span class="text-[11px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                    Geospatial Asset Intelligence
+                </span>
+                <span class="text-xs text-slate-400 dark:text-slate-500">•</span>
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Kolkata — Barasat Metro Corridor (WGS-84)</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Deterministic Spatial Property Discovery
             </h1>
-            <p class="text-slate-400 text-sm sm:text-base max-w-2xl">
-                Explore real estate visually. Deterministic PostGIS spatial calculations with radius, polygon, and bounding-box queries.
+            <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-3xl mt-1 leading-relaxed">
+                Deterministic PostGIS geodetic query engine. Query residential and commercial assets via multi-tier geodesic buffers, geofenced neighborhood polygons, and real-time bounding-box viewport synchronization.
             </p>
         </div>
-        <div class="flex items-center space-x-3">
-            <span id="resultsCountBadge" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/30 flex items-center">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2"></span>
-                <span id="resultsCountText">Loading properties...</span>
-            </span>
+        <div class="flex items-center space-x-3 flex-shrink-0">
+            <div id="resultsCountBadge" class="px-4 py-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center shadow-sm">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse mr-2.5"></span>
+                <span id="resultsCountText">Synchronizing assets...</span>
+            </div>
         </div>
     </div>
 
-    <!-- Quick Filters Bar -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+    <!-- Parameter Filter Toolbar -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 mb-6 shadow-sm flex flex-wrap items-center justify-between gap-4 transition-colors">
+        <!-- Configuration Filters -->
         <div class="flex flex-wrap items-center gap-2">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-2">Bedrooms:</span>
-            <button class="bhk-filter-btn active px-3 py-1 text-xs font-medium rounded-lg bg-brand-600 text-slate-950 font-bold transition" data-bhk="">All</button>
-            <button class="bhk-filter-btn px-3 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-bhk="2">2 BHK</button>
-            <button class="bhk-filter-btn px-3 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-bhk="3">3 BHK</button>
-            <button class="bhk-filter-btn px-3 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-bhk="4">4+ BHK</button>
+            <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1.5">Asset Configuration:</span>
+            <button class="bhk-filter-btn active px-3.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white shadow-sm transition" data-bhk="">All Configurations</button>
+            <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="2">2 BHK</button>
+            <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="3">3 BHK</button>
+            <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="4">4+ BHK</button>
         </div>
 
+        <!-- Neighborhood Geofence & Infrastructure Toggle -->
         <div class="flex flex-wrap items-center gap-4">
             <div class="flex items-center space-x-2">
-                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Neighborhood:</span>
-                <select id="neighborhoodSelect" class="bg-slate-800 text-slate-200 text-xs rounded-xl px-3 py-1.5 border border-slate-700/80 focus:outline-none focus:border-brand-500 cursor-pointer">
-                    <option value="">All Neighborhoods (Kolkata & Barasat)</option>
+                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sub-Market Geofence:</span>
+                <select id="neighborhoodSelect" class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl px-3.5 py-1.5 border border-slate-200 dark:border-slate-700/80 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-sm">
+                    <option value="">All Sub-Markets (Entire Metro Extent)</option>
                 </select>
             </div>
 
             <label class="inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="toggleAmenities" class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                <span class="ml-2 text-xs font-medium text-slate-300">Show Nearby Amenities</span>
+                <div class="w-9 h-5 bg-slate-300 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                <span class="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">Transit & Civic Infrastructure Overlay</span>
             </label>
         </div>
     </div>
 
-    <!-- Interactive Map & Spatial Controls Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Map Canvas Container (2 Columns) -->
-        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[560px] relative">
-            <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 z-20 relative">
-                <div class="flex items-center space-x-2">
-                    <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Live PostGIS Geospatial View</span>
+    <!-- Spatial Viewport & Intelligence Console -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
+        <!-- Interactive Cartographic Map Canvas (8 Cols) -->
+        <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl overflow-hidden shadow-md flex flex-col h-[580px] relative transition-colors">
+            <!-- Map Top Overlay Bar -->
+            <div class="p-3.5 border-b border-slate-200/90 dark:border-slate-800 flex items-center justify-between bg-slate-50/90 dark:bg-slate-900/80 z-20 relative backdrop-blur-sm transition-colors">
+                <div class="flex items-center space-x-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">Interactive Cartographic Viewport</span>
+                    <span class="text-[10px] text-slate-400 font-mono">EPSG:4326</span>
                 </div>
-                <div class="flex items-center space-x-3 text-xs text-slate-400">
-                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span> Click to set Radius</span>
-                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-purple-500 mr-1.5"></span> Use Draw tool for Polygon</span>
+                <div class="hidden sm:flex items-center space-x-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span> Click for Geodesic Buffer</span>
+                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-purple-500 mr-1.5"></span> Draw Spatial Polygon</span>
                 </div>
             </div>
             
-            <!-- Floating Search Area Button -->
-            <button id="searchBoundsBtn" class="absolute top-16 left-1/2 transform -translate-x-1/2 z-[1000] bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-5 py-2 rounded-full shadow-lg text-xs hidden transition-colors flex items-center">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                Search this area (PostGIS Viewport)
+            <!-- Floating Viewport Query Button -->
+            <button id="searchBoundsBtn" class="absolute top-16 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-500 text-white dark:text-slate-950 font-bold px-5 py-2.5 rounded-full shadow-2xl text-xs hidden transition flex items-center space-x-2 border border-slate-700 dark:border-emerald-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <span>Synchronize To Current Viewport</span>
             </button>
             
             <div id="map" class="w-full flex-grow z-10"></div>
         </div>
 
-        <!-- Right Side Panel: Search, Filters & Quick Actions -->
-        <div class="space-y-6">
-            <!-- Spatial Radius Search Control -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <h3 class="text-base font-bold text-white mb-4 flex items-center">
-                    <span class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 mr-2.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </span>
-                    Spatial Radius Search
-                </h3>
+        <!-- Spatial Parameters & Query Telemetry (4 Cols) -->
+        <div class="lg:col-span-4 space-y-5 flex flex-col justify-between">
+            <!-- Geodesic Radius Filter -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm transition-colors">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center">
+                        <span class="p-1.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 mr-2.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                        Geodesic Radius Filter
+                    </h3>
+                    <span id="radiusValue" class="text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 rounded-lg border border-blue-200 dark:border-blue-500/20">5.0 km</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-3.5 leading-relaxed">
+                    Click any point on the cartographic canvas to execute a geodetic spatial buffer search via PostGIS <code class="text-blue-500">ST_DWithin</code>.
+                </p>
                 <div class="space-y-4">
-                    <p class="text-xs text-slate-400">Click anywhere on the map to query properties within that distance using PostGIS geography calculations.</p>
-                    <div>
-                        <div class="flex justify-between text-xs text-slate-300 mb-2">
-                            <span>Search Radius</span>
-                            <span id="radiusValue" class="font-bold text-blue-400">5 km</span>
-                        </div>
-                        <input type="range" id="radiusSlider" min="1" max="25" value="5" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
-                    </div>
-                    <div class="flex space-x-3">
-                        <button id="locateMeBtn" class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-bold rounded-lg transition-colors flex justify-center items-center">
-                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            Locate Me
+                    <input type="range" id="radiusSlider" min="1" max="25" value="5" class="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                    <div class="flex space-x-2.5">
+                        <button id="locateMeBtn" class="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-sm transition flex justify-center items-center space-x-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <span>Locate Device</span>
                         </button>
-                        <button id="clearSearchBtn" class="flex-1 py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors hidden">
-                            Clear Spatial Filter
+                        <button id="clearSearchBtn" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition hidden border border-slate-200 dark:border-slate-700">
+                            Reset Extent
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Spatial Geometry Details Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <h3 class="text-base font-bold text-white mb-3 flex items-center">
-                    <span class="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 mr-2.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
-                        </svg>
-                    </span>
-                    Active Spatial Query
-                </h3>
-                <div id="activeFilterInfo" class="text-xs text-slate-400 space-y-2">
-                    <p class="flex items-center text-slate-300 font-semibold">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2"></span>
-                        Full Repository View (All Active Listings)
-                    </p>
-                    <p class="text-[11px] text-slate-500">Draw a polygon using the map tools or click to search a radius.</p>
+            <!-- Spatial Query Telemetry Console -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm transition-colors flex-grow flex flex-col justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center">
+                        <span class="p-1.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 mr-2.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                            </svg>
+                        </span>
+                        Active Spatial Operator
+                    </h3>
+                    <div id="activeFilterInfo" class="text-xs text-slate-500 dark:text-slate-400 space-y-2">
+                        <p class="flex items-center text-slate-900 dark:text-slate-200 font-bold">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                            Global Repository Scope (Unconstrained)
+                        </p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">All active database assets within the greater metropolitan corridor are currently displayed.</p>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 mt-4">
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        <span>Spatial Engine: PostGIS 3.4</span>
+                        <span class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">GiST Indexed</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Live Synchronized Properties Feed -->
+    <!-- Asset Inventory Header & Feed -->
     <div class="mb-12">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-extrabold text-white tracking-tight flex items-center">
-                <span>Matching Properties</span>
-                <span id="cardCountPill" class="ml-3 text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">0 properties</span>
-            </h2>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-2">
+            <div>
+                <h2 class="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center">
+                    <span>Curated Asset Inventory</span>
+                    <span id="cardCountPill" class="ml-3 text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border border-slate-200/80 dark:border-slate-700/80">
+                        0 assets
+                    </span>
+                </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Listings matching the active spatial boundary and configuration criteria.</p>
+            </div>
         </div>
 
         <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -138,37 +162,37 @@
         </div>
     </div>
 
-    <!-- Proximity Inspection Slide-Over / Modal -->
-    <div id="proximityModal" class="fixed inset-0 z-[2000] bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <!-- Infrastructure Proximity Breakdown Slide-Over Modal -->
+    <div id="proximityModal" class="fixed inset-0 z-[2000] bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto transition-colors">
             <!-- Modal Header -->
-            <div class="flex items-start justify-between pb-4 border-b border-slate-800 mb-5">
+            <div class="flex items-start justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-5">
                 <div>
                     <div class="flex items-center space-x-2 mb-1">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span class="text-xs uppercase font-bold tracking-wider text-emerald-400">PostGIS Spatial Distance Analysis</span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-xs uppercase font-extrabold tracking-wider text-emerald-600 dark:text-emerald-400">PostGIS K-Nearest Neighbor (KNN) Engine</span>
                     </div>
-                    <h3 id="proximityModalTitle" class="text-xl font-extrabold text-white">Property Proximity Breakdown</h3>
-                    <p id="proximityModalSubtitle" class="text-xs text-slate-400 mt-0.5">Calculating nearest amenities...</p>
+                    <h3 id="proximityModalTitle" class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">Infrastructure Proximity Profile</h3>
+                    <p id="proximityModalSubtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Calculating geodesic distances to primary civic nodes...</p>
                 </div>
-                <button id="closeProximityModalBtn" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition">
+                <button id="closeProximityModalBtn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
 
             <!-- Proximity Items List -->
-            <div id="proximityList" class="space-y-3.5 mb-6">
+            <div id="proximityList" class="space-y-3 mb-6">
                 <!-- Dynamically loaded -->
             </div>
 
             <!-- Modal Footer -->
-            <div class="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                <span class="flex items-center text-emerald-400">
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span class="flex items-center text-emerald-600 dark:text-emerald-400 font-semibold">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Visual guide lines rendered on map
+                    Geodesic connector vectors projected on map
                 </span>
-                <button id="closeModalFooterBtn" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition">
-                    Close Breakdown
+                <button id="closeModalFooterBtn" class="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition border border-slate-200 dark:border-slate-700">
+                    Close Profile
                 </button>
             </div>
         </div>
@@ -179,18 +203,36 @@
 {% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Leaflet Map centered on Salt Lake, Kolkata
-        const map = L.map('map').setView([22.5840, 88.4250], 13);
+        // Theme-aware Leaflet Tile Setup
+        const isCurrentlyDark = () => document.documentElement.classList.contains('dark');
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
+        const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        const tileAttribution = '&copy; OpenStreetMap contributors &copy; CARTO';
+
+        // Initialize Map centered on North Kolkata to Barasat Corridor
+        const map = L.map('map').setView([22.6550, 88.4200], 11);
+
+        let currentTileLayer = L.tileLayer(isCurrentlyDark() ? darkTileUrl : lightTileUrl, {
+            attribution: tileAttribution,
             maxZoom: 19
         }).addTo(map);
+
+        // Global theme update handler
+        window.updateMapTheme = function(isDark) {
+            map.removeLayer(currentTileLayer);
+            currentTileLayer = L.tileLayer(isDark ? darkTileUrl : lightTileUrl, {
+                attribution: tileAttribution,
+                maxZoom: 19
+            }).addTo(map);
+        };
 
         // Feature groups
         const propertyLayer = L.featureGroup().addTo(map);
         const amenityLayer = L.featureGroup().addTo(map);
         const drawnItems = new L.FeatureGroup().addTo(map);
+        const proximityLinesLayer = L.featureGroup().addTo(map);
+        const neighborhoodLayer = L.featureGroup().addTo(map);
 
         let searchPin = null;
         let searchCircle = null;
@@ -198,12 +240,12 @@
         let activeBhkFilter = "";
         let currentApiUrl = '/api/v1/properties/';
 
-        // Initialize Leaflet Draw for custom Polygon Search
+        // Initialize Leaflet Draw for Polygon Containment Queries
         const drawControl = new L.Control.Draw({
             edit: { featureGroup: drawnItems },
             draw: {
                 polygon: {
-                    shapeOptions: { color: '#a855f7', fillColor: '#a855f7', fillOpacity: 0.15 }
+                    shapeOptions: { color: '#8b5cf6', fillColor: '#8b5cf6', fillOpacity: 0.15 }
                 },
                 polyline: false,
                 rectangle: false,
@@ -223,17 +265,35 @@
         const resultsCountText = document.getElementById('resultsCountText');
         const cardCountPill = document.getElementById('cardCountPill');
         const toggleAmenities = document.getElementById('toggleAmenities');
+        const neighborhoodSelect = document.getElementById('neighborhoodSelect');
+
+        // Modal Elements
+        const proximityModal = document.getElementById('proximityModal');
+        const proximityModalTitle = document.getElementById('proximityModalTitle');
+        const proximityModalSubtitle = document.getElementById('proximityModalSubtitle');
+        const proximityList = document.getElementById('proximityList');
+        const closeProximityModalBtn = document.getElementById('closeProximityModalBtn');
+        const closeModalFooterBtn = document.getElementById('closeModalFooterBtn');
+
+        function closeProximityModal() {
+            proximityModal.classList.add('hidden');
+            proximityLinesLayer.clearLayers();
+        }
+
+        closeProximityModalBtn.addEventListener('click', closeProximityModal);
+        closeModalFooterBtn.addEventListener('click', closeProximityModal);
 
         // Radius slider input
         radiusSlider.addEventListener('input', (e) => {
-            radiusValue.textContent = `${e.target.value} km`;
+            const val = parseFloat(e.target.value).toFixed(1);
+            radiusValue.textContent = `${val} km`;
             if (searchPin) {
                 const latlng = searchPin.getLatLng();
                 performRadiusSearch(latlng.lat, latlng.lng, e.target.value);
             }
         });
 
-        // Format price in Indian Rupee format (Lakhs / Crores)
+        // Format Indian Rupee currency (Lakhs / Crores)
         function formatINR(price) {
             const num = Number(price);
             if (num >= 10000000) {
@@ -250,62 +310,66 @@
                 ? props.filter(p => activeBhkFilter === '4' ? p.bedrooms >= 4 : p.bedrooms === Number(activeBhkFilter))
                 : props;
 
-            resultsCountText.textContent = `${filtered.length} properties in view`;
-            cardCountPill.textContent = `${filtered.length} properties`;
+            resultsCountText.textContent = `${filtered.length} Assets Active`;
+            cardCountPill.textContent = `${filtered.length} listings`;
 
             if (filtered.length === 0) {
                 propertiesGrid.innerHTML = `
-                    <div class="col-span-full bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-400">
-                        <p class="text-base font-semibold mb-1">No properties found in this spatial boundary</p>
-                        <p class="text-xs text-slate-500">Try increasing your search radius, adjusting filters, or panning the map.</p>
+                    <div class="col-span-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-10 text-center text-slate-500 dark:text-slate-400 shadow-sm transition-colors">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <h4 class="text-base font-bold text-slate-900 dark:text-white mb-1">Zero Assets In Active Boundary</h4>
+                        <p class="text-xs">Adjust your search parameters, expand the geodesic buffer, or pan the map viewport.</p>
                     </div>
                 `;
                 return;
             }
 
             propertiesGrid.innerHTML = filtered.map(prop => `
-                <div class="property-card group bg-slate-900 border border-slate-800 hover:border-brand-500/50 rounded-2xl p-5 shadow-xl transition duration-200 cursor-pointer flex flex-col justify-between"
+                <div class="property-card group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/50 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between"
                      data-id="${prop.id}" data-lat="${prop.lat}" data-lng="${prop.lng}">
                     <div>
                         <div class="flex items-start justify-between mb-3">
-                            <span class="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                            <span class="text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
                                 ${prop.property_type}
                             </span>
-                            <span class="text-lg font-black text-white">
+                            <span class="text-lg font-black text-slate-900 dark:text-white">
                                 ${formatINR(prop.price)}
                             </span>
                         </div>
-                        <h3 class="text-base font-bold text-white group-hover:text-emerald-400 transition mb-1 line-clamp-1">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition mb-1 line-clamp-1">
                             ${prop.title}
                         </h3>
-                        <p class="text-xs text-slate-400 line-clamp-1 mb-4 flex items-center">
-                            <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-4 flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-1 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                             ${prop.address}
                         </p>
                     </div>
 
-                    <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-300">
-                        <div class="flex items-center space-x-3">
-                            <span class="font-semibold">${prop.bedrooms} BHK</span>
-                            <span class="text-slate-600">•</span>
-                            <span>${prop.area_sqft} sqft</span>
+                    <div>
+                        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-medium">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="font-bold text-slate-900 dark:text-white">${prop.bedrooms} BHK</span>
+                                <span class="text-slate-300 dark:text-slate-700">•</span>
+                                <span>${prop.area_sqft} sqft</span>
+                            </div>
+                            <span class="text-[11px] font-semibold text-slate-400">₹${prop.price_per_sqft}/sqft</span>
                         </div>
-                        <span class="text-[11px] text-slate-400">₹${prop.price_per_sqft}/sqft</span>
-                    </div>
 
-                    <!-- Proximity Inspection Button -->
-                    <button class="inspect-amenities-btn mt-3 w-full py-1.5 px-3 rounded-xl bg-slate-800/90 hover:bg-emerald-600 text-slate-300 hover:text-slate-950 text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-slate-700/60 hover:border-emerald-500"
-                            data-id="${prop.id}">
-                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover:text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        <span>Inspect Amenities & Proximity</span>
-                    </button>
+                        <!-- Proximity Inspection Button -->
+                        <button class="inspect-amenities-btn mt-3.5 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-emerald-600 text-slate-700 hover:text-white dark:bg-slate-800 dark:hover:bg-emerald-600 dark:text-slate-200 dark:hover:text-slate-950 text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-slate-200 dark:border-slate-700/80 shadow-sm"
+                                data-id="${prop.id}">
+                            <svg class="w-3.5 h-3.5 text-emerald-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <span>Infrastructure Proximity Profile</span>
+                        </button>
+                    </div>
                 </div>
             `).join('');
 
             // Card click listener: fly to marker on map
             document.querySelectorAll('.property-card').forEach(card => {
                 card.addEventListener('click', (e) => {
-                    // Ignore if clicked on the inspect button
                     if (e.target.closest('.inspect-amenities-btn')) return;
 
                     const lat = parseFloat(card.getAttribute('data-lat'));
@@ -333,7 +397,7 @@
         }
 
         // Load and plot properties on map
-        function loadProperties(url, customBbox = null) {
+        function loadProperties(url) {
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
@@ -346,7 +410,7 @@
                             const customIcon = L.divIcon({
                                 className: 'bg-transparent',
                                 html: `
-                                    <div class="w-8 h-8 rounded-full bg-emerald-600 border-2 border-slate-900 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                                    <div class="w-8 h-8 rounded-full bg-emerald-600 border-2 border-white dark:border-slate-900 text-white font-black text-[10px] flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
                                         ${prop.bedrooms}B
                                     </div>
                                 `,
@@ -357,15 +421,15 @@
                             const marker = L.marker([prop.lat, prop.lng], { icon: customIcon }).addTo(propertyLayer);
                             marker.propertyId = prop.id;
                             marker.bindPopup(`
-                                <div class="text-slate-900 font-sans text-xs min-w-[210px]">
+                                <div class="font-sans text-xs min-w-[210px] p-1">
                                     <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold uppercase text-[9px]">${prop.property_type}</span>
-                                    <h4 class="font-bold text-sm mt-1 mb-0.5">${prop.title}</h4>
-                                    <p class="font-extrabold text-emerald-700 text-sm mb-1">${formatINR(prop.price)}</p>
+                                    <h4 class="font-bold text-sm text-slate-900 mt-1 mb-0.5">${prop.title}</h4>
+                                    <p class="font-black text-emerald-600 text-sm mb-1">${formatINR(prop.price)}</p>
                                     <p class="text-slate-600 font-medium">${prop.bedrooms} BHK • ${prop.area_sqft} sqft (₹${prop.price_per_sqft}/sqft)</p>
                                     <p class="text-slate-400 text-[10px] mt-1 border-t border-slate-200 pt-1">${prop.address}</p>
-                                    <button onclick="window.inspectPropertyProximity(${prop.id})" class="mt-2 w-full py-1 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-[10px] transition flex items-center justify-center space-x-1">
+                                    <button onclick="window.inspectPropertyProximity(${prop.id})" class="mt-2 w-full py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition flex items-center justify-center space-x-1 shadow-sm">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path></svg>
-                                        <span>Inspect Nearest Amenities</span>
+                                        <span>Proximity Profile</span>
                                     </button>
                                 </div>
                             `);
@@ -382,6 +446,8 @@
             if (searchPin) map.removeLayer(searchPin);
             if (searchCircle) map.removeLayer(searchCircle);
             drawnItems.clearLayers();
+            neighborhoodLayer.clearLayers();
+            neighborhoodSelect.value = "";
 
             searchPin = L.marker([lat, lng], {
                 icon: L.divIcon({
@@ -405,11 +471,11 @@
             clearSearchBtn.classList.remove('hidden');
 
             activeFilterInfo.innerHTML = `
-                <p class="text-blue-400 font-bold flex items-center">
-                    <span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span>
-                    PostGIS Radius: ${radiusKm} km
+                <p class="text-blue-600 dark:text-blue-400 font-bold flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                    Geodesic Buffer: ${radiusKm} km
                 </p>
-                <p class="text-slate-400 text-[11px]">Center: [${lat.toFixed(4)}, ${lng.toFixed(4)}]</p>
+                <p class="text-slate-500 dark:text-slate-400 text-[11px]">Centroid: [${lat.toFixed(4)}, ${lng.toFixed(4)}] • PostGIS ST_DWithin</p>
             `;
 
             currentApiUrl = `/api/v1/properties/radius-search/?lat=${lat}&lng=${lng}&radius_km=${radiusKm}`;
@@ -422,22 +488,24 @@
             performRadiusSearch(e.latlng.lat, e.latlng.lng, radius);
         });
 
-        // Clear Spatial Search Filter
+        // Reset Extent Button
         clearSearchBtn.addEventListener('click', () => {
             if (searchPin) map.removeLayer(searchPin);
             if (searchCircle) map.removeLayer(searchCircle);
             drawnItems.clearLayers();
+            neighborhoodLayer.clearLayers();
+            neighborhoodSelect.value = "";
             searchPin = null;
             searchCircle = null;
             clearSearchBtn.classList.add('hidden');
             searchBoundsBtn.classList.add('hidden');
 
             activeFilterInfo.innerHTML = `
-                <p class="flex items-center text-slate-300 font-semibold">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2"></span>
-                    Full Repository View (All Active Listings)
+                <p class="flex items-center text-slate-900 dark:text-slate-200 font-bold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                    Global Repository Scope (Unconstrained)
                 </p>
-                <p class="text-[11px] text-slate-500">Draw a polygon using the map tools or click to search a radius.</p>
+                <p class="text-[11px] text-slate-500 leading-relaxed">All active database assets within the greater metropolitan corridor are currently displayed.</p>
             `;
 
             currentApiUrl = '/api/v1/properties/';
@@ -452,17 +520,19 @@
 
             if (searchPin) map.removeLayer(searchPin);
             if (searchCircle) map.removeLayer(searchCircle);
+            neighborhoodLayer.clearLayers();
+            neighborhoodSelect.value = "";
             searchPin = null;
             searchCircle = null;
             clearSearchBtn.classList.remove('hidden');
 
             const geojson = layer.toGeoJSON();
             activeFilterInfo.innerHTML = `
-                <p class="text-purple-400 font-bold flex items-center">
-                    <span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
-                    PostGIS Custom Polygon Containment
+                <p class="text-purple-600 dark:text-purple-400 font-bold flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
+                    Custom Geofenced Polygon Containment
                 </p>
-                <p class="text-slate-400 text-[11px]">Vertices: ${geojson.geometry.coordinates[0].length} boundary points</p>
+                <p class="text-slate-500 dark:text-slate-400 text-[11px]">Boundary: ${geojson.geometry.coordinates[0].length} vertices • PostGIS ST_Within</p>
             `;
 
             const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
@@ -486,7 +556,7 @@
                         const customIcon = L.divIcon({
                             className: 'bg-transparent',
                             html: `
-                                <div class="w-8 h-8 rounded-full bg-purple-600 border-2 border-slate-900 text-white font-black text-[10px] flex items-center justify-center shadow-lg">
+                                <div class="w-8 h-8 rounded-full bg-purple-600 border-2 border-white dark:border-slate-900 text-white font-black text-[10px] flex items-center justify-center shadow-lg">
                                     ${prop.bedrooms}B
                                 </div>
                             `,
@@ -497,10 +567,10 @@
                         const marker = L.marker([prop.lat, prop.lng], { icon: customIcon }).addTo(propertyLayer);
                         marker.propertyId = prop.id;
                         marker.bindPopup(`
-                            <div class="text-slate-900 font-sans text-xs min-w-[200px]">
+                            <div class="font-sans text-xs min-w-[210px] p-1">
                                 <span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 font-bold uppercase text-[9px]">${prop.property_type}</span>
-                                <h4 class="font-bold text-sm mt-1 mb-0.5">${prop.title}</h4>
-                                <p class="font-extrabold text-purple-700 text-sm mb-1">${formatINR(prop.price)}</p>
+                                <h4 class="font-bold text-sm text-slate-900 mt-1 mb-0.5">${prop.title}</h4>
+                                <p class="font-black text-purple-700 text-sm mb-1">${formatINR(prop.price)}</p>
                                 <p class="text-slate-600 font-medium">${prop.bedrooms} BHK • ${prop.area_sqft} sqft</p>
                             </div>
                         `);
@@ -514,7 +584,7 @@
 
         // Bounding Box Viewport Search
         map.on('moveend', () => {
-            if (!searchPin && drawnItems.getLayers().length === 0) {
+            if (!searchPin && drawnItems.getLayers().length === 0 && neighborhoodLayer.getLayers().length === 0) {
                 searchBoundsBtn.classList.remove('hidden');
             }
         });
@@ -525,11 +595,11 @@
 
             searchBoundsBtn.classList.add('hidden');
             activeFilterInfo.innerHTML = `
-                <p class="text-emerald-400 font-bold flex items-center">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2"></span>
-                    PostGIS Viewport Bounding Box
+                <p class="text-emerald-600 dark:text-emerald-400 font-bold flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                    Bounding Envelope Containment (ST_Contains)
                 </p>
-                <p class="text-slate-400 text-[11px]">BBox: ${bounds.getWest().toFixed(3)}, ${bounds.getSouth().toFixed(3)} to ${bounds.getEast().toFixed(3)}, ${bounds.getNorth().toFixed(3)}</p>
+                <p class="text-slate-500 dark:text-slate-400 text-[11px]">BBox Extent: [${bounds.getWest().toFixed(3)}, ${bounds.getSouth().toFixed(3)}] to [${bounds.getEast().toFixed(3)}, ${bounds.getNorth().toFixed(3)}]</p>
             `;
 
             clearSearchBtn.classList.remove('hidden');
@@ -541,7 +611,7 @@
         const locateMeBtn = document.getElementById('locateMeBtn');
         locateMeBtn.addEventListener('click', () => {
             if ("geolocation" in navigator) {
-                locateMeBtn.innerHTML = '<span class="animate-pulse">Locating...</span>';
+                locateMeBtn.innerHTML = '<span class="animate-pulse">Acquiring Fix...</span>';
                 navigator.geolocation.getCurrentPosition(
                     function(position) {
                         const lat = position.coords.latitude;
@@ -549,11 +619,11 @@
                         const radius = radiusSlider.value;
                         map.setView([lat, lng], 14);
                         performRadiusSearch(lat, lng, radius);
-                        locateMeBtn.innerHTML = '<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Locate Me';
+                        locateMeBtn.innerHTML = '<svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Locate Device';
                     },
                     function(err) {
                         alert("Could not access location. Please check browser permissions.");
-                        locateMeBtn.innerHTML = '<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Locate Me';
+                        locateMeBtn.innerHTML = '<svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Locate Device';
                     }
                 );
             }
@@ -563,11 +633,11 @@
         document.querySelectorAll('.bhk-filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.bhk-filter-btn').forEach(b => {
-                    b.classList.remove('bg-brand-600', 'text-slate-950', 'font-bold');
-                    b.classList.add('bg-slate-800', 'text-slate-300');
+                    b.classList.remove('bg-emerald-600', 'text-white', 'font-bold');
+                    b.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
                 });
-                btn.classList.add('bg-brand-600', 'text-slate-950', 'font-bold');
-                btn.classList.remove('bg-slate-800', 'text-slate-300');
+                btn.classList.add('bg-emerald-600', 'text-white', 'font-bold');
+                btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
 
                 activeBhkFilter = btn.getAttribute('data-bhk');
                 renderPropertyCards(currentProperties);
@@ -592,14 +662,14 @@
 
                                 const amenityIcon = L.divIcon({
                                     className: 'bg-transparent',
-                                    html: `<div class="w-4 h-4 rounded-full ${badgeColor} border border-white shadow-md"></div>`,
+                                    html: `<div class="w-4 h-4 rounded-full ${badgeColor} border-2 border-white shadow-md"></div>`,
                                     iconSize: [16, 16],
                                     iconAnchor: [8, 8]
                                 });
 
                                 const marker = L.marker([am.lat, am.lng], { icon: amenityIcon }).addTo(amenityLayer);
                                 marker.bindPopup(`
-                                    <div class="text-slate-900 font-sans text-xs">
+                                    <div class="font-sans text-xs p-1">
                                         <span class="font-bold text-slate-500 uppercase text-[9px]">${am.category_name}</span>
                                         <h5 class="font-bold text-sm text-slate-900 mb-0.5">${am.name}</h5>
                                         <p class="text-slate-500 text-[10px]">${am.address || ''}</p>
@@ -614,34 +684,15 @@
             }
         });
 
-        // Proximity Guide Lines Layer
-        const proximityLinesLayer = L.featureGroup().addTo(map);
-
-        // Modal Elements
-        const proximityModal = document.getElementById('proximityModal');
-        const proximityModalTitle = document.getElementById('proximityModalTitle');
-        const proximityModalSubtitle = document.getElementById('proximityModalSubtitle');
-        const proximityList = document.getElementById('proximityList');
-        const closeProximityModalBtn = document.getElementById('closeProximityModalBtn');
-        const closeModalFooterBtn = document.getElementById('closeModalFooterBtn');
-
-        function closeProximityModal() {
-            proximityModal.classList.add('hidden');
-            proximityLinesLayer.clearLayers();
-        }
-
-        closeProximityModalBtn.addEventListener('click', closeProximityModal);
-        closeModalFooterBtn.addEventListener('click', closeProximityModal);
-
         // Global Inspect Proximity Function
         window.inspectPropertyProximity = function(propertyId) {
             proximityModal.classList.remove('hidden');
-            proximityModalTitle.textContent = 'Analyzing Proximity...';
-            proximityModalSubtitle.textContent = 'Querying PostGIS nearest neighbor spatial database...';
+            proximityModalTitle.textContent = 'Analyzing Infrastructure Proximity...';
+            proximityModalSubtitle.textContent = 'Querying PostGIS K-Nearest Neighbor geodetic metric...';
             proximityList.innerHTML = `
                 <div class="py-8 text-center text-slate-400">
                     <div class="inline-block w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <p class="text-xs">Finding nearest Metro, Hospitals, Schools, and Parks...</p>
+                    <p class="text-xs font-semibold">Executing spatial distance metrics across civic infrastructure nodes...</p>
                 </div>
             `;
             proximityLinesLayer.clearLayers();
@@ -650,24 +701,24 @@
                 .then(res => res.json())
                 .then(data => {
                     proximityModalTitle.textContent = data.property_title;
-                    proximityModalSubtitle.textContent = `Location: [${data.property_location.lat.toFixed(4)}, ${data.property_location.lng.toFixed(4)}]`;
+                    proximityModalSubtitle.textContent = `Coordinates: [${data.property_location.lat.toFixed(4)}, ${data.property_location.lng.toFixed(4)}] • WGS-84 Geodesic`;
 
                     const propLat = data.property_location.lat;
                     const propLng = data.property_location.lng;
 
                     // Color mapping per category
                     const categoryConfig = {
-                        'Metro Station': { color: '#3b82f6', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' },
-                        'Hospital': { color: '#ef4444', bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/30' },
-                        'School': { color: '#f59e0b', bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30' },
-                        'Shopping Mall': { color: '#d946ef', bg: 'bg-fuchsia-500/10', text: 'text-fuchsia-400', border: 'border-fuchsia-500/30' },
-                        'Park': { color: '#10b981', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+                        'Metro Station': { color: '#3b82f6', bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30' },
+                        'Hospital': { color: '#ef4444', bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/30' },
+                        'School': { color: '#f59e0b', bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/30' },
+                        'Shopping Mall': { color: '#d946ef', bg: 'bg-fuchsia-500/10', text: 'text-fuchsia-600 dark:text-fuchsia-400', border: 'border-fuchsia-500/30' },
+                        'Park': { color: '#10b981', bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/30' },
                     };
 
                     const bounds = L.latLngBounds([[propLat, propLng]]);
 
                     proximityList.innerHTML = data.nearest_amenities.map(am => {
-                        const cfg = categoryConfig[am.category_name] || { color: '#10b981', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' };
+                        const cfg = categoryConfig[am.category_name] || { color: '#10b981', bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/30' };
 
                         // Add connecting guide line on map
                         if (am.lat && am.lng) {
@@ -681,32 +732,32 @@
                             line.bindTooltip(`${am.category_name}: ${am.distance_km} km`, {
                                 permanent: true,
                                 direction: 'center',
-                                className: 'bg-slate-900 border border-slate-700 text-slate-100 text-[10px] px-2 py-0.5 rounded shadow'
+                                className: 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-[10px] px-2 py-0.5 rounded-lg shadow-md font-bold'
                             });
 
                             bounds.extend([am.lat, am.lng]);
                         }
 
                         // Score badge style
-                        let scoreBadgeClass = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-                        if (am.proximity_score < 50) scoreBadgeClass = 'bg-rose-500/15 text-rose-400 border-rose-500/30';
-                        else if (am.proximity_score < 75) scoreBadgeClass = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+                        let scoreBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30';
+                        if (am.proximity_score < 50) scoreBadgeClass = 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30';
+                        else if (am.proximity_score < 75) scoreBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30';
 
                         return `
-                            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between hover:border-slate-700 transition">
+                            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition">
                                 <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 rounded-xl ${cfg.bg} ${cfg.text} border ${cfg.border} flex items-center justify-center font-bold text-sm">
+                                    <div class="w-10 h-10 rounded-xl ${cfg.bg} ${cfg.text} border ${cfg.border} flex items-center justify-center font-extrabold text-sm">
                                         ${am.category_name.slice(0, 2).toUpperCase()}
                                     </div>
                                     <div>
                                         <span class="text-[10px] font-bold uppercase tracking-wider ${cfg.text}">${am.category_name}</span>
-                                        <h4 class="text-sm font-bold text-white">${am.amenity_name}</h4>
-                                        <p class="text-xs text-slate-400">${am.address || ''}</p>
+                                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">${am.amenity_name}</h4>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">${am.address || ''}</p>
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-base font-extrabold text-white">${am.distance_km} km</div>
-                                    <span class="inline-block mt-0.5 text-[10px] px-2 py-0.5 rounded-full font-bold border ${scoreBadgeClass}">
+                                    <div class="text-base font-black text-slate-900 dark:text-white">${am.distance_km} km</div>
+                                    <span class="inline-block mt-0.5 text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${scoreBadgeClass}">
                                         ${am.proximity_label} (${am.proximity_score}%)
                                     </span>
                                 </div>
@@ -719,11 +770,9 @@
                 })
                 .catch(err => {
                     console.error('Error fetching nearest amenities:', err);
-                    proximityList.innerHTML = `<p class="text-rose-400 text-xs py-4 text-center">Failed to load nearest amenities. Please try again.</p>`;
+                    proximityList.innerHTML = `<p class="text-rose-500 text-xs py-4 text-center">Failed to execute spatial proximity query. Please try again.</p>`;
                 });
-        // Neighborhood Area Polygon Layer
-        const neighborhoodLayer = L.featureGroup().addTo(map);
-        const neighborhoodSelect = document.getElementById('neighborhoodSelect');
+        };
 
         // Populate Neighborhoods
         fetch('/api/v1/areas/')
@@ -734,7 +783,7 @@
                     areas.forEach(area => {
                         const opt = document.createElement('option');
                         opt.value = area.id;
-                        opt.textContent = `${area.name} (${area.property_count})`;
+                        opt.textContent = `${area.name} (${area.property_count} assets)`;
                         neighborhoodSelect.appendChild(opt);
                     });
                 }
@@ -753,11 +802,11 @@
             if (!areaId) {
                 clearSearchBtn.classList.add('hidden');
                 activeFilterInfo.innerHTML = `
-                    <p class="flex items-center text-slate-300 font-semibold">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2"></span>
-                        Full Repository View (All Active Listings)
+                    <p class="flex items-center text-slate-900 dark:text-slate-200 font-bold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                        Global Repository Scope (Unconstrained)
                     </p>
-                    <p class="text-[11px] text-slate-500">Draw a polygon using the map tools, select a neighborhood, or search a radius.</p>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">All active database assets within the greater metropolitan corridor are currently displayed.</p>
                 `;
                 currentApiUrl = '/api/v1/properties/';
                 loadProperties(currentApiUrl);
@@ -770,18 +819,18 @@
                 .then(res => res.json())
                 .then(area => {
                     activeFilterInfo.innerHTML = `
-                        <p class="text-purple-400 font-bold flex items-center">
-                            <span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
-                            ${area.name} (PostGIS MultiPolygon)
+                        <p class="text-purple-600 dark:text-purple-400 font-bold flex items-center">
+                            <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
+                            ${area.name} (MultiPolygon Geofence)
                         </p>
-                        <p class="text-slate-400 text-[11px]">${area.description}</p>
+                        <p class="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">${area.description}</p>
                     `;
 
                     if (area.boundary_geojson) {
                         const geoLayer = L.geoJSON(area.boundary_geojson, {
                             style: {
-                                color: '#a855f7',
-                                fillColor: '#a855f7',
+                                color: '#8b5cf6',
+                                fillColor: '#8b5cf6',
                                 fillOpacity: 0.12,
                                 weight: 2.5,
                                 dashArray: '4, 4'
@@ -795,13 +844,6 @@
                     loadProperties(currentApiUrl);
                 })
                 .catch(err => console.log('Error loading area details:', err));
-        });
-
-        // Also update clearSearchBtn to clear neighborhoodLayer
-        const originalClearClick = clearSearchBtn.onclick;
-        clearSearchBtn.addEventListener('click', () => {
-            neighborhoodLayer.clearLayers();
-            neighborhoodSelect.value = "";
         });
 
         // Initial Load

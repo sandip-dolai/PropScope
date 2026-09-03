@@ -3,76 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}PropScope — Geospatial Real Estate & Hybrid Recommendation Platform{% endblock %}</title>
-    <!-- Tailwind CSS CDN -->
+    <title>{% block title %}PropScope — Geospatial Real Estate & Spatial Intelligence Platform{% endblock %}</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN with darkMode: class -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
                     colors: {
                         brand: {
-                            50: '#f0fdf4',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            900: '#14532d',
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
                         }
                     }
                 }
             }
         }
     </script>
+
+    <!-- Instant Theme Detection Script (Prevents FOUC) -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('propscope-theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+
     <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <!-- Leaflet Draw CSS & JS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <style>
+        body {
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+    </style>
+
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white antialiased">
 
-    <!-- Navigation Bar -->
-    <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <!-- Enterprise Navigation Header -->
+    <header class="border-b border-slate-200/90 dark:border-slate-800/80 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md sticky top-0 z-50 transition-colors shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center font-bold text-slate-950 text-xl shadow-lg shadow-brand-500/20">
+                <!-- Platform Brand Identity -->
+                <div class="flex items-center space-x-3.5">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center font-black text-white text-base shadow-md shadow-emerald-500/20">
                         PS
                     </div>
                     <div>
-                        <a href="{% url 'home' %}" class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">PropScope</a>
-                        <span class="ml-2 text-xs uppercase px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 font-semibold border border-brand-500/20">PostGIS + AI</span>
+                        <div class="flex items-center space-x-2">
+                            <a href="{% url 'home' %}" class="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white hover:opacity-95 transition">PropScope</a>
+                            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                                PostGIS 3.4
+                            </span>
+                        </div>
+                        <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-none mt-0.5">Geospatial Real Estate Intelligence</p>
                     </div>
                 </div>
 
-                <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-300">
-                    <a href="{% url 'home' %}" class="hover:text-white transition">Explore Map</a>
-                    <a href="/api/v1/properties/" class="hover:text-white transition">Properties API</a>
-                    <a href="/api/v1/amenities/" class="hover:text-white transition">Amenities</a>
-                    <a href="/api/v1/recommendations/hybrid/" class="hover:text-white transition">Recommendations</a>
-                    <a href="/admin/" class="hover:text-brand-400 transition">Admin Portal</a>
-                </div>
+                <!-- Navigation Modules -->
+                <nav class="hidden lg:flex items-center space-x-7 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    <a href="{% url 'home' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span>Market Discovery</span>
+                    </a>
+                    <a href="/api/v1/areas/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+                        Sub-Markets
+                    </a>
+                    <a href="/api/v1/amenities/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+                        Infrastructure
+                    </a>
+                    <a href="/api/docs/swagger/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1">
+                        <span>Spatial API Docs</span>
+                        <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                </nav>
 
+                <!-- Header Actions -->
                 <div class="flex items-center space-x-3">
-                    <a href="/admin/" class="px-4 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-brand-600 to-emerald-500 text-slate-950 hover:opacity-90 shadow-md shadow-brand-500/20 transition">
-                        Dashboard
+                    <!-- Light / Dark Theme Switcher Button -->
+                    <button id="themeToggleBtn" type="button" aria-label="Toggle theme" title="Toggle Theme"
+                            class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shadow-sm border border-slate-200/80 dark:border-slate-700/60">
+                        <!-- Sun Icon (Shown in Dark Mode) -->
+                        <svg id="themeIconSun" class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <!-- Moon Icon (Shown in Light Mode) -->
+                        <svg id="themeIconMoon" class="w-4 h-4 block dark:hidden text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+
+                    <!-- Agent / Admin Portal Button -->
+                    <a href="/admin/" target="_blank"
+                       class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:text-slate-950 transition shadow-sm flex items-center space-x-1.5 border border-slate-800 dark:border-emerald-500">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <span>Agent Console</span>
                     </a>
                 </div>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- Main Content -->
+    <!-- Main Application Viewport -->
     <main class="flex-grow">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        <p>PropScope &copy; 2026 — Geospatial Real Estate & Hybrid Recommendation Platform. Built with Django, PostGIS, Leaflet, and Redis.</p>
+    <!-- Enterprise Footer & System Disclosures -->
+    <footer class="border-t border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-950 py-10 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-xs">
+                <div class="space-y-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white font-black flex items-center justify-center text-xs">PS</span>
+                        <span class="font-extrabold text-sm text-slate-900 dark:text-white">PropScope Engine</span>
+                    </div>
+                    <p class="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+                        Enterprise geospatial property platform performing geodetic distance calculations, PostGIS spatial indexing, and multi-tier infrastructure connectivity analysis.
+                    </p>
+                </div>
+                <div>
+                    <h5 class="font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 text-[10px]">Geospatial Architecture</h5>
+                    <ul class="space-y-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
+                        <li>PostgreSQL 16 + PostGIS 3.4</li>
+                        <li>WGS-84 (SRID 4326) Geodetic Coordinates</li>
+                        <li>GiST 2D Spatial Indexing</li>
+                        <li>KNN Amenity Proximity Engine</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 text-[10px]">Application Stack</h5>
+                    <ul class="space-y-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
+                        <li>Django 5.1 & Django REST Framework</li>
+                        <li>Celery Asynchronous Task Workers</li>
+                        <li>Redis 7 In-Memory State Cache</li>
+                        <li>Leaflet.js + CartoDB Vector Maps</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 text-[10px]">Developer Interfaces</h5>
+                    <ul class="space-y-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
+                        <li><a href="/api/docs/swagger/" target="_blank" class="hover:text-emerald-500 transition">OpenAPI 3.0 Interactive Swagger</a></li>
+                        <li><a href="/api/docs/redoc/" target="_blank" class="hover:text-emerald-500 transition">ReDoc Reference Documentation</a></li>
+                        <li><a href="/api/v1/properties/" target="_blank" class="hover:text-emerald-500 transition">Properties REST API</a></li>
+                        <li><a href="/api/v1/areas/" target="_blank" class="hover:text-emerald-500 transition">Sub-Market Polygon API</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-slate-500 dark:text-slate-500 text-[11px]">
+                <p>PropScope &copy; 2026. All spatial indexes and geodetic algorithms compiled and verified.</p>
+                <p class="mt-2 sm:mt-0 flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>System Status: Fully Operational</span>
+                </p>
+            </div>
+        </div>
     </footer>
+
+    <!-- Theme Toggle Logic & Custom Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
+            themeToggleBtn.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('propscope-theme', isDark ? 'dark' : 'light');
+
+                if (window.updateMapTheme) {
+                    window.updateMapTheme(isDark);
+                }
+            });
+        });
+    </script>
 
     {% block extra_scripts %}{% endblock %}
 </body>

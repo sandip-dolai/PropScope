@@ -18,6 +18,7 @@ urlpatterns = [
     # API v1 routes
     path('api/v1/auth/', include('apps.accounts.urls')),
     path('api/v1/properties/', include('apps.properties.urls')),
+    path('api/v1/areas/', include('apps.geography.urls')),
     path('api/v1/amenities/', include('apps.amenities.urls')),
     path('api/v1/recommendations/', include('apps.recommendations.urls')),
     path('api/v1/analytics/', include('apps.analytics.urls')),

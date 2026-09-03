@@ -30,11 +30,18 @@
             <button class="bhk-filter-btn px-3 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-bhk="4">4+ BHK</button>
         </div>
 
-        <div class="flex items-center space-x-4">
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="flex items-center space-x-2">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Neighborhood:</span>
+                <select id="neighborhoodSelect" class="bg-slate-800 text-slate-200 text-xs rounded-xl px-3 py-1.5 border border-slate-700/80 focus:outline-none focus:border-brand-500 cursor-pointer">
+                    <option value="">All Neighborhoods (Kolkata & Barasat)</option>
+                </select>
+            </div>
+
             <label class="inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="toggleAmenities" class="sr-only peer">
                 <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                <span class="ml-2 text-xs font-medium text-slate-300">Show Nearby Amenities (Metro, Hospitals, Parks)</span>
+                <span class="ml-2 text-xs font-medium text-slate-300">Show Nearby Amenities</span>
             </label>
         </div>
     </div>
@@ -714,7 +721,88 @@
                     console.error('Error fetching nearest amenities:', err);
                     proximityList.innerHTML = `<p class="text-rose-400 text-xs py-4 text-center">Failed to load nearest amenities. Please try again.</p>`;
                 });
-        };
+        // Neighborhood Area Polygon Layer
+        const neighborhoodLayer = L.featureGroup().addTo(map);
+        const neighborhoodSelect = document.getElementById('neighborhoodSelect');
+
+        // Populate Neighborhoods
+        fetch('/api/v1/areas/')
+            .then(res => res.json())
+            .then(data => {
+                const areas = data.results || data;
+                if (Array.isArray(areas)) {
+                    areas.forEach(area => {
+                        const opt = document.createElement('option');
+                        opt.value = area.id;
+                        opt.textContent = `${area.name} (${area.property_count})`;
+                        neighborhoodSelect.appendChild(opt);
+                    });
+                }
+            })
+            .catch(err => console.log('Error loading areas:', err));
+
+        // Neighborhood Change Event Listener
+        neighborhoodSelect.addEventListener('change', (e) => {
+            const areaId = e.target.value;
+            neighborhoodLayer.clearLayers();
+            if (searchPin) map.removeLayer(searchPin);
+            if (searchCircle) map.removeLayer(searchCircle);
+            drawnItems.clearLayers();
+            searchPin = null; searchCircle = null;
+
+            if (!areaId) {
+                clearSearchBtn.classList.add('hidden');
+                activeFilterInfo.innerHTML = `
+                    <p class="flex items-center text-slate-300 font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2"></span>
+                        Full Repository View (All Active Listings)
+                    </p>
+                    <p class="text-[11px] text-slate-500">Draw a polygon using the map tools, select a neighborhood, or search a radius.</p>
+                `;
+                currentApiUrl = '/api/v1/properties/';
+                loadProperties(currentApiUrl);
+                return;
+            }
+
+            clearSearchBtn.classList.remove('hidden');
+
+            fetch(`/api/v1/areas/${areaId}/`)
+                .then(res => res.json())
+                .then(area => {
+                    activeFilterInfo.innerHTML = `
+                        <p class="text-purple-400 font-bold flex items-center">
+                            <span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
+                            ${area.name} (PostGIS MultiPolygon)
+                        </p>
+                        <p class="text-slate-400 text-[11px]">${area.description}</p>
+                    `;
+
+                    if (area.boundary_geojson) {
+                        const geoLayer = L.geoJSON(area.boundary_geojson, {
+                            style: {
+                                color: '#a855f7',
+                                fillColor: '#a855f7',
+                                fillOpacity: 0.12,
+                                weight: 2.5,
+                                dashArray: '4, 4'
+                            }
+                        }).addTo(neighborhoodLayer);
+
+                        map.fitBounds(geoLayer.getBounds(), { padding: [40, 40] });
+                    }
+
+                    currentApiUrl = `/api/v1/areas/${areaId}/properties/`;
+                    loadProperties(currentApiUrl);
+                })
+                .catch(err => console.log('Error loading area details:', err));
+        });
+
+        // Also update clearSearchBtn to clear neighborhoodLayer
+        const originalClearClick = clearSearchBtn.onclick;
+        clearSearchBtn.addEventListener('click', () => {
+            neighborhoodLayer.clearLayers();
+            neighborhoodSelect.value = "";
+        });
 
         // Initial Load
         loadProperties('/api/v1/properties/');

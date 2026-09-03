@@ -15,14 +15,21 @@
     <!-- Interactive Map & Search Dashboard Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Map Canvas Container (2 Columns on large screens) -->
-        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[560px]">
-            <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[560px] relative">
+            <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 z-20 relative">
                 <div class="flex items-center space-x-2">
                     <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Live PostGIS Geospatial View</span>
                 </div>
                 <div class="text-xs text-slate-400">Leaflet.js + OpenStreetMap</div>
             </div>
+            
+            <!-- Floating Search Area Button -->
+            <button id="searchBoundsBtn" class="absolute top-16 left-1/2 transform -translate-x-1/2 z-[1000] bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-full shadow-lg font-bold text-sm hidden transition-colors flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Search this area
+            </button>
+            
             <div id="map" class="w-full flex-grow z-10"></div>
         </div>
 
@@ -249,6 +256,40 @@
             } else {
                 alert("Geolocation is not supported by your browser.");
             }
+        });
+
+        // Bounding Box Search Logic
+        const searchBoundsBtn = document.getElementById('searchBoundsBtn');
+        
+        // Show button when map is panned/zoomed
+        map.on('moveend', () => {
+            // Don't show if we are actively drawing or if a pin is dropped (unless they want to override)
+            if (!searchPin) {
+                searchBoundsBtn.classList.remove('hidden');
+            }
+        });
+
+        // Perform bounding box search on click
+        searchBoundsBtn.addEventListener('click', () => {
+            const bounds = map.getBounds();
+            const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
+            
+            // Clear any active radius searches
+            if (searchPin) map.removeLayer(searchPin);
+            if (searchCircle) map.removeLayer(searchCircle);
+            searchPin = null;
+            searchCircle = null;
+            clearSearchBtn.classList.add('hidden');
+            
+            searchBoundsBtn.classList.add('hidden');
+            searchBoundsBtn.innerHTML = '<span class="animate-pulse">Searching...</span>';
+            
+            loadProperties(`/api/v1/properties/bbox-search/?bbox=${bbox}`);
+            
+            // Reset button text for next time
+            setTimeout(() => {
+                searchBoundsBtn.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Search this area';
+            }, 1000);
         });
 
         // Initial Load

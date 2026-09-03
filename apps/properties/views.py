@@ -1,7 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.contrib.gis.geos import Point, GEOSGeometry
+from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
 from django.contrib.gis.measure import D
 from .models import Property, PropertyStatus
 from .serializers import PropertySerializer
@@ -89,6 +89,42 @@ class PropertyPolygonSearchView(APIView):
         properties = Property.objects.filter(
             status=PropertyStatus.ACTIVE,
             location__within=geometry
+        ).select_related('agent')
+
+        serializer = PropertySerializer(properties, many=True)
+        return Response({
+            "count": len(properties),
+            "results": serializer.data
+        })
+
+
+class PropertyBoundingBoxSearchView(APIView):
+    """
+    Search properties contained within a bounding box (viewport).
+    Expects bbox parameter in format: minLng,minLat,maxLng,maxLat
+    """
+    def get(self, request):
+        bbox_str = request.query_params.get('bbox')
+        if not bbox_str:
+            return Response({"error": "bbox parameter is required (minLng,minLat,maxLng,maxLat)"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            bbox_coords = [float(c) for c in bbox_str.split(',')]
+            if len(bbox_coords) != 4:
+                raise ValueError
+            
+            # min_lng, min_lat, max_lng, max_lat
+            bbox_polygon = Polygon.from_bbox(bbox_coords)
+            bbox_polygon.srid = 4326
+        except ValueError:
+            return Response(
+                {"error": "bbox must contain 4 comma-separated numbers (minLng,minLat,maxLng,maxLat)"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        properties = Property.objects.filter(
+            status=PropertyStatus.ACTIVE,
+            location__contained=bbox_polygon
         ).select_related('agent')
 
         serializer = PropertySerializer(properties, many=True)

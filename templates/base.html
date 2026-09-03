@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}PropScope — Geospatial Real Estate & Spatial Intelligence Platform{% endblock %}</title>
 
     <!-- Google Fonts: Plus Jakarta Sans -->
@@ -56,6 +57,47 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
+    <!-- Global API Client with Native CSRF Interception -->
+    <script>
+        window.getCsrfToken = function() {
+            const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (metaToken && metaToken.length > 10) return metaToken;
+
+            const cookieToken = document.cookie.split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+            return cookieToken || '';
+        };
+
+        window.apiClient = async function(url, options = {}) {
+            const method = (options.method || 'GET').toUpperCase();
+            const isMutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+            
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                ...(isMutating ? { 'X-CSRFToken': window.getCsrfToken() } : {}),
+                ...(options.headers || {})
+            };
+
+            const response = await fetch(url, {
+                ...options,
+                headers,
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const error = new Error(errorData.error || errorData.detail || `HTTP Error ${response.status}`);
+                error.status = response.status;
+                error.data = errorData;
+                throw error;
+            }
+
+            return response.json().catch(() => ({}));
+        };
+    </script>
+
     <style>
         body {
             transition: background-color 0.2s ease, color 0.2s ease;
@@ -83,139 +125,26 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white antialiased">
+    <!-- Invisible CSRF token input to guarantee token context initialization -->
+    <div style="display:none">{% csrf_token %}</div>
 
-    <!-- Enterprise Navigation Header -->
-    <header class="border-b border-slate-200/90 dark:border-slate-800/80 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md sticky top-0 z-50 transition-colors shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- Platform Brand Identity -->
-                <div class="flex items-center space-x-3.5">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center font-black text-white text-base shadow-md shadow-emerald-500/20">
-                        PS
-                    </div>
-                    <div>
-                        <div class="flex items-center space-x-2">
-                            <a href="{% url 'home' %}" class="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white hover:opacity-95 transition">PropScope</a>
-                            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                                PostGIS 3.4
-                            </span>
-                        </div>
-                        <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-none mt-0.5">Geospatial Real Estate Intelligence</p>
-                    </div>
-                </div>
+    <!-- Layout Container Slot -->
+    {% block layout %}{% endblock %}
 
-                <!-- Navigation Modules -->
-                <nav class="hidden lg:flex items-center space-x-7 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                    <a href="{% url 'home' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        <span>Market Discovery</span>
-                    </a>
-                    <a href="/api/v1/areas/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">
-                        Sub-Markets
-                    </a>
-                    <a href="/api/v1/amenities/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">
-                        Infrastructure
-                    </a>
-                    <a href="/api/docs/swagger/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1">
-                        <span>Spatial API Docs</span>
-                        <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                    </a>
-                </nav>
-
-                <!-- Header Actions -->
-                <div class="flex items-center space-x-3">
-                    <!-- Light / Dark Theme Switcher Button -->
-                    <button id="themeToggleBtn" type="button" aria-label="Toggle theme" title="Toggle Theme"
-                            class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shadow-sm border border-slate-200/80 dark:border-slate-700/60">
-                        <!-- Sun Icon (Shown in Dark Mode) -->
-                        <svg id="themeIconSun" class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        <!-- Moon Icon (Shown in Light Mode) -->
-                        <svg id="themeIconMoon" class="w-4 h-4 block dark:hidden text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
-                    </button>
-
-                    <!-- Agent / Admin Portal Button -->
-                    <a href="/admin/" target="_blank"
-                       class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:text-slate-950 transition shadow-sm flex items-center space-x-1.5 border border-slate-800 dark:border-emerald-500">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        <span>Agent Console</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Application Viewport -->
-    <main class="flex-grow">
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- Enterprise Footer & System Disclosures -->
-    <footer class="border-t border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-950 py-10 transition-colors">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-xs">
-                <div class="space-y-2">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white font-black flex items-center justify-center text-xs">PS</span>
-                        <span class="font-extrabold text-sm text-slate-900 dark:text-white">PropScope Engine</span>
-                    </div>
-                    <p class="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
-                        Enterprise geospatial property platform performing geodetic distance calculations, PostGIS spatial indexing, and multi-tier infrastructure connectivity analysis.
-                    </p>
-                </div>
-                <div>
-                    <h5 class="font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 text-[10px]">Geospatial Architecture</h5>
-                    <ul class="space-y-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
-                        <li>PostgreSQL 16 + PostGIS 3.4</li>
-                        <li>WGS-84 (SRID 4326) Geodetic Coordinates</li>
-                        <li>GiST 2D Spatial Indexing</li>
-                        <li>KNN Amenity Proximity Engine</li>
-                    </ul>
-                </div>
-                <div>
-                    <h5 class="font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 text-[10px]">Application Stack</h5>
-                    <ul class="space-y-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
-                        <li>Django 5.1 & Django REST Framework</li>
-                        <li>Celery Asynchronous Task Workers</li>
-                        <li>Redis 7 In-Memory State Cache</li>
-                        <li>Leaflet.js + CartoDB Vector Maps</li>
-                    </ul>
-                </div>
-                <div>
-                    <h5 class="font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 text-[10px]">Developer Interfaces</h5>
-                    <ul class="space-y-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
-                        <li><a href="/api/docs/swagger/" target="_blank" class="hover:text-emerald-500 transition">OpenAPI 3.0 Interactive Swagger</a></li>
-                        <li><a href="/api/docs/redoc/" target="_blank" class="hover:text-emerald-500 transition">ReDoc Reference Documentation</a></li>
-                        <li><a href="/api/v1/properties/" target="_blank" class="hover:text-emerald-500 transition">Properties REST API</a></li>
-                        <li><a href="/api/v1/areas/" target="_blank" class="hover:text-emerald-500 transition">Sub-Market Polygon API</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-slate-500 dark:text-slate-500 text-[11px]">
-                <p>PropScope &copy; 2026. All spatial indexes and geodetic algorithms compiled and verified.</p>
-                <p class="mt-2 sm:mt-0 flex items-center space-x-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span>System Status: Fully Operational</span>
-                </p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Theme Toggle Logic & Custom Scripts -->
+    <!-- Global Theme Toggle Listener -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const themeToggleBtn = document.getElementById('themeToggleBtn');
-            themeToggleBtn.addEventListener('click', () => {
-                const isDark = document.documentElement.classList.toggle('dark');
-                localStorage.setItem('propscope-theme', isDark ? 'dark' : 'light');
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    const isDark = document.documentElement.classList.toggle('dark');
+                    localStorage.setItem('propscope-theme', isDark ? 'dark' : 'light');
 
-                if (window.updateMapTheme) {
-                    window.updateMapTheme(isDark);
-                }
-            });
+                    if (window.updateMapTheme) {
+                        window.updateMapTheme(isDark);
+                    }
+                });
+            }
         });
     </script>
 

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block layout %}
+    <!-- Public Header Component -->
+    {% include 'components/navbar.html' %}
+
+    <!-- Main Public Content Viewport -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Public Institutional Footer Component -->
+    {% include 'components/footer.html' %}
+{% endblock %}

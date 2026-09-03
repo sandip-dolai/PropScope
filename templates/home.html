@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'layouts/public.html' %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
@@ -535,17 +535,10 @@
                 <p class="text-slate-500 dark:text-slate-400 text-[11px]">Boundary: ${geojson.geometry.coordinates[0].length} vertices • PostGIS ST_Within</p>
             `;
 
-            const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
-
-            fetch('/api/v1/properties/polygon-search/', {
+            window.apiClient('/api/v1/properties/polygon-search/', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
                 body: JSON.stringify({ geojson: geojson.geometry })
             })
-            .then(res => res.json())
             .then(data => {
                 propertyLayer.clearLayers();
                 const results = data.results || data;

@@ -3,12 +3,20 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class HomeView(TemplateView):
+    template_name = 'home.html'
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', TemplateView.as_view(template_name='home.html'), name='home'),
+    path('', HomeView.as_view(), name='home'),
     
     # API Schema and Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

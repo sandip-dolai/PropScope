@@ -92,3 +92,42 @@ def test_rule_based_recommendation():
     assert len(results) == 1
     assert results[0]["property_id"] == p1.id
     assert results[0]["normal_score"] > 80.0
+
+
+@pytest.mark.django_db
+def test_home_view_emits_csrf_cookie_and_meta(client):
+    response = client.get('/')
+    assert response.status_code == 200
+    assert 'csrftoken' in response.cookies
+    content = response.content.decode('utf-8')
+    assert '<meta name="csrf-token"' in content
+    assert 'window.apiClient' in content
+
+
+@pytest.mark.django_db
+def test_protected_polygon_search_with_csrf(client):
+    # Obtain CSRF cookie first
+    get_resp = client.get('/')
+    csrf_cookie = get_resp.cookies['csrftoken'].value
+
+    # Mutating POST with X-CSRFToken header
+    geojson_polygon = {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [88.40, 22.56],
+                [88.45, 22.56],
+                [88.45, 22.60],
+                [88.40, 22.60],
+                [88.40, 22.56]
+            ]
+        ]
+    }
+    post_resp = client.post(
+        '/api/v1/properties/polygon-search/',
+        data={"geojson": geojson_polygon},
+        content_type='application/json',
+        HTTP_X_CSRFTOKEN=csrf_cookie
+    )
+    assert post_resp.status_code == 200
+

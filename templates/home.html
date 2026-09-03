@@ -130,6 +130,42 @@
             <!-- Dynamically populated property cards -->
         </div>
     </div>
+
+    <!-- Proximity Inspection Slide-Over / Modal -->
+    <div id="proximityModal" class="fixed inset-0 z-[2000] bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="flex items-start justify-between pb-4 border-b border-slate-800 mb-5">
+                <div>
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-xs uppercase font-bold tracking-wider text-emerald-400">PostGIS Spatial Distance Analysis</span>
+                    </div>
+                    <h3 id="proximityModalTitle" class="text-xl font-extrabold text-white">Property Proximity Breakdown</h3>
+                    <p id="proximityModalSubtitle" class="text-xs text-slate-400 mt-0.5">Calculating nearest amenities...</p>
+                </div>
+                <button id="closeProximityModalBtn" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Proximity Items List -->
+            <div id="proximityList" class="space-y-3.5 mb-6">
+                <!-- Dynamically loaded -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                <span class="flex items-center text-emerald-400">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Visual guide lines rendered on map
+                </span>
+                <button id="closeModalFooterBtn" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition">
+                    Close Breakdown
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -249,24 +285,42 @@
                         </div>
                         <span class="text-[11px] text-slate-400">₹${prop.price_per_sqft}/sqft</span>
                     </div>
+
+                    <!-- Proximity Inspection Button -->
+                    <button class="inspect-amenities-btn mt-3 w-full py-1.5 px-3 rounded-xl bg-slate-800/90 hover:bg-emerald-600 text-slate-300 hover:text-slate-950 text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-slate-700/60 hover:border-emerald-500"
+                            data-id="${prop.id}">
+                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover:text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span>Inspect Amenities & Proximity</span>
+                    </button>
                 </div>
             `).join('');
 
             // Card click listener: fly to marker on map
             document.querySelectorAll('.property-card').forEach(card => {
-                card.addEventListener('click', () => {
+                card.addEventListener('click', (e) => {
+                    // Ignore if clicked on the inspect button
+                    if (e.target.closest('.inspect-amenities-btn')) return;
+
                     const lat = parseFloat(card.getAttribute('data-lat'));
                     const lng = parseFloat(card.getAttribute('data-lng'));
                     const id = parseInt(card.getAttribute('data-id'));
 
                     map.flyTo([lat, lng], 15, { duration: 1.2 });
 
-                    // Open popup
                     propertyLayer.eachLayer(layer => {
                         if (layer.propertyId === id) {
                             layer.openPopup();
                         }
                     });
+                });
+            });
+
+            // Inspect button click listener
+            document.querySelectorAll('.inspect-amenities-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const propId = parseInt(btn.getAttribute('data-id'));
+                    window.inspectPropertyProximity(propId);
                 });
             });
         }
@@ -296,12 +350,16 @@
                             const marker = L.marker([prop.lat, prop.lng], { icon: customIcon }).addTo(propertyLayer);
                             marker.propertyId = prop.id;
                             marker.bindPopup(`
-                                <div class="text-slate-900 font-sans text-xs min-w-[200px]">
+                                <div class="text-slate-900 font-sans text-xs min-w-[210px]">
                                     <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold uppercase text-[9px]">${prop.property_type}</span>
                                     <h4 class="font-bold text-sm mt-1 mb-0.5">${prop.title}</h4>
                                     <p class="font-extrabold text-emerald-700 text-sm mb-1">${formatINR(prop.price)}</p>
                                     <p class="text-slate-600 font-medium">${prop.bedrooms} BHK • ${prop.area_sqft} sqft (₹${prop.price_per_sqft}/sqft)</p>
                                     <p class="text-slate-400 text-[10px] mt-1 border-t border-slate-200 pt-1">${prop.address}</p>
+                                    <button onclick="window.inspectPropertyProximity(${prop.id})" class="mt-2 w-full py-1 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-[10px] transition flex items-center justify-center space-x-1">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path></svg>
+                                        <span>Inspect Nearest Amenities</span>
+                                    </button>
                                 </div>
                             `);
                         }
@@ -548,6 +606,115 @@
                 amenityLayer.clearLayers();
             }
         });
+
+        // Proximity Guide Lines Layer
+        const proximityLinesLayer = L.featureGroup().addTo(map);
+
+        // Modal Elements
+        const proximityModal = document.getElementById('proximityModal');
+        const proximityModalTitle = document.getElementById('proximityModalTitle');
+        const proximityModalSubtitle = document.getElementById('proximityModalSubtitle');
+        const proximityList = document.getElementById('proximityList');
+        const closeProximityModalBtn = document.getElementById('closeProximityModalBtn');
+        const closeModalFooterBtn = document.getElementById('closeModalFooterBtn');
+
+        function closeProximityModal() {
+            proximityModal.classList.add('hidden');
+            proximityLinesLayer.clearLayers();
+        }
+
+        closeProximityModalBtn.addEventListener('click', closeProximityModal);
+        closeModalFooterBtn.addEventListener('click', closeProximityModal);
+
+        // Global Inspect Proximity Function
+        window.inspectPropertyProximity = function(propertyId) {
+            proximityModal.classList.remove('hidden');
+            proximityModalTitle.textContent = 'Analyzing Proximity...';
+            proximityModalSubtitle.textContent = 'Querying PostGIS nearest neighbor spatial database...';
+            proximityList.innerHTML = `
+                <div class="py-8 text-center text-slate-400">
+                    <div class="inline-block w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                    <p class="text-xs">Finding nearest Metro, Hospitals, Schools, and Parks...</p>
+                </div>
+            `;
+            proximityLinesLayer.clearLayers();
+
+            fetch(`/api/v1/properties/${propertyId}/nearest-amenities/`)
+                .then(res => res.json())
+                .then(data => {
+                    proximityModalTitle.textContent = data.property_title;
+                    proximityModalSubtitle.textContent = `Location: [${data.property_location.lat.toFixed(4)}, ${data.property_location.lng.toFixed(4)}]`;
+
+                    const propLat = data.property_location.lat;
+                    const propLng = data.property_location.lng;
+
+                    // Color mapping per category
+                    const categoryConfig = {
+                        'Metro Station': { color: '#3b82f6', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' },
+                        'Hospital': { color: '#ef4444', bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/30' },
+                        'School': { color: '#f59e0b', bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30' },
+                        'Shopping Mall': { color: '#d946ef', bg: 'bg-fuchsia-500/10', text: 'text-fuchsia-400', border: 'border-fuchsia-500/30' },
+                        'Park': { color: '#10b981', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+                    };
+
+                    const bounds = L.latLngBounds([[propLat, propLng]]);
+
+                    proximityList.innerHTML = data.nearest_amenities.map(am => {
+                        const cfg = categoryConfig[am.category_name] || { color: '#10b981', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' };
+
+                        // Add connecting guide line on map
+                        if (am.lat && am.lng) {
+                            const line = L.polyline([[propLat, propLng], [am.lat, am.lng]], {
+                                color: cfg.color,
+                                weight: 2.5,
+                                dashArray: '6, 6',
+                                opacity: 0.85
+                            }).addTo(proximityLinesLayer);
+
+                            line.bindTooltip(`${am.category_name}: ${am.distance_km} km`, {
+                                permanent: true,
+                                direction: 'center',
+                                className: 'bg-slate-900 border border-slate-700 text-slate-100 text-[10px] px-2 py-0.5 rounded shadow'
+                            });
+
+                            bounds.extend([am.lat, am.lng]);
+                        }
+
+                        // Score badge style
+                        let scoreBadgeClass = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+                        if (am.proximity_score < 50) scoreBadgeClass = 'bg-rose-500/15 text-rose-400 border-rose-500/30';
+                        else if (am.proximity_score < 75) scoreBadgeClass = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+
+                        return `
+                            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between hover:border-slate-700 transition">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-xl ${cfg.bg} ${cfg.text} border ${cfg.border} flex items-center justify-center font-bold text-sm">
+                                        ${am.category_name.slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider ${cfg.text}">${am.category_name}</span>
+                                        <h4 class="text-sm font-bold text-white">${am.amenity_name}</h4>
+                                        <p class="text-xs text-slate-400">${am.address || ''}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-base font-extrabold text-white">${am.distance_km} km</div>
+                                    <span class="inline-block mt-0.5 text-[10px] px-2 py-0.5 rounded-full font-bold border ${scoreBadgeClass}">
+                                        ${am.proximity_label} (${am.proximity_score}%)
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    // Fit map bounds to show property and its nearby amenities
+                    map.fitBounds(bounds, { padding: [60, 60] });
+                })
+                .catch(err => {
+                    console.error('Error fetching nearest amenities:', err);
+                    proximityList.innerHTML = `<p class="text-rose-400 text-xs py-4 text-center">Failed to load nearest amenities. Please try again.</p>`;
+                });
+        };
 
         // Initial Load
         loadProperties('/api/v1/properties/');

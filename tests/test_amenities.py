@@ -99,7 +99,11 @@ def test_nearest_amenities_api_endpoint(api_client, sample_data):
     data = response.json()
     assert data["property_id"] == prop.id
     assert len(data["nearest_amenities"]) == 2
-    assert data["nearest_amenities"][0]["amenity_name"] in ["Close Metro", "City Care Hospital"]
+    
+    # Check proximity scoring fields in response
+    metro_item = next(i for i in data["nearest_amenities"] if i["category_name"] == "Metro Station")
+    assert metro_item["proximity_score"] == 100.0
+    assert "Excellent" in metro_item["proximity_label"]
 
 
 @pytest.mark.django_db
@@ -107,3 +111,43 @@ def test_nearest_amenities_not_found(api_client):
     url = "/api/v1/properties/99999/nearest-amenities/"
     response = api_client.get(url)
     assert response.status_code == 404
+
+
+def test_amenity_proximity_scorer_thresholds():
+    from apps.amenities.scoring import AmenityProximityScorer
+
+    scorer = AmenityProximityScorer()
+
+    # Metro thresholds: <1km=100, <2.5km=75, <5km=45, >5km=20
+    score, label = scorer.score_category("Metro Station", 0.6)
+    assert score == 100.0
+    assert "Excellent" in label
+
+    score, label = scorer.score_category("Metro Station", 1.8)
+    assert score == 75.0
+    assert "Good" in label
+
+    score, label = scorer.score_category("Metro Station", 3.2)
+    assert score == 45.0
+    assert "Moderate" in label
+
+    score, label = scorer.score_category("Metro Station", 6.0)
+    assert score == 20.0
+    assert "Poor" in label
+
+
+def test_enrich_nearest_amenities():
+    from apps.amenities.scoring import AmenityProximityScorer
+
+    scorer = AmenityProximityScorer()
+    sample_list = [
+        {"category_name": "Hospital", "distance_km": 1.2, "amenity_name": "Apollo"},
+        {"category_name": "Park", "distance_km": 4.5, "amenity_name": "Eco Park"},
+    ]
+
+    enriched = scorer.enrich_nearest_amenities(sample_list)
+    assert len(enriched) == 2
+    assert enriched[0]["proximity_score"] == 100.0
+    assert enriched[0]["proximity_label"] == "Immediate (<1.5 km)"
+    assert enriched[1]["proximity_score"] == 25.0
+

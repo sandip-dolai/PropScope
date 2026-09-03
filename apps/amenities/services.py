@@ -1,5 +1,6 @@
 from django.contrib.gis.db.models.functions import Distance
 from .models import Amenity, AmenityCategory
+from .scoring import AmenityProximityScorer
 
 
 class AmenitySpatialService:
@@ -9,10 +10,11 @@ class AmenitySpatialService:
     """
 
     @staticmethod
-    def get_nearest_amenities_for_point(point):
+    def get_nearest_amenities_for_point(point, enrich_with_scores=True):
         """
         Given a GEOS Point (SRID 4326), finds the closest amenity in each category
         using PostGIS Distance annotation and spatial ordering.
+        Optionally enriches results with normalized proximity scores (0-100) and labels.
         """
         categories = AmenityCategory.objects.all()
         nearest_results = []
@@ -42,14 +44,21 @@ class AmenitySpatialService:
                     "lng": nearest_amenity.longitude,
                 })
 
+        if enrich_with_scores:
+            scorer = AmenityProximityScorer()
+            nearest_results = scorer.enrich_nearest_amenities(nearest_results)
+
         return nearest_results
 
     @classmethod
-    def get_nearest_amenities_for_property(cls, property_obj):
+    def get_nearest_amenities_for_property(cls, property_obj, enrich_with_scores=True):
         """
         Finds the closest amenity per category for a given Property instance.
         """
-        nearest_amenities = cls.get_nearest_amenities_for_point(property_obj.location)
+        nearest_amenities = cls.get_nearest_amenities_for_point(
+            property_obj.location,
+            enrich_with_scores=enrich_with_scores
+        )
         return {
             "property_id": property_obj.id,
             "property_title": property_obj.title,
@@ -59,3 +68,4 @@ class AmenitySpatialService:
             },
             "nearest_amenities": nearest_amenities
         }
+

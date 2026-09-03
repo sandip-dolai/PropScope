@@ -47,9 +47,15 @@
                         </div>
                         <input type="range" id="radiusSlider" min="1" max="50" value="5" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
                     </div>
-                    <button id="clearSearchBtn" class="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors hidden">
-                        Clear Search & Show All
-                    </button>
+                    <div class="flex space-x-3">
+                        <button id="locateMeBtn" class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors flex justify-center items-center">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            Locate Me
+                        </button>
+                        <button id="clearSearchBtn" class="flex-1 py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors hidden">
+                            Clear Search
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -215,6 +221,34 @@
             searchCircle = null;
             clearSearchBtn.classList.add('hidden');
             loadProperties('/api/v1/properties/'); // Reload all
+        });
+
+        // Locate Me Event
+        const locateMeBtn = document.getElementById('locateMeBtn');
+        locateMeBtn.addEventListener('click', () => {
+            if ("geolocation" in navigator) {
+                locateMeBtn.innerHTML = '<span class="animate-pulse">Locating...</span>';
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const radius = radiusSlider.value;
+                        
+                        // Center map on user
+                        map.setView([lat, lng], 14);
+                        performRadiusSearch(lat, lng, radius);
+                        
+                        locateMeBtn.innerHTML = '<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Locate Me';
+                    },
+                    function(error) {
+                        console.error("Error getting location:", error);
+                        alert("Could not get your location. Please check browser permissions.");
+                        locateMeBtn.innerHTML = '<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Locate Me';
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
         });
 
         // Initial Load

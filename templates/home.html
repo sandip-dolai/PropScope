@@ -203,27 +203,28 @@
 {% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Theme-aware Leaflet Tile Setup
+        // Theme-aware Leaflet Tile Setup (Zero Watermarks, No API Key Required)
         const isCurrentlyDark = () => document.documentElement.classList.contains('dark');
 
-        const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-        const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-        const tileAttribution = '&copy; OpenStreetMap contributors &copy; CARTO';
+        const lightTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+        const darkTileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+        const lightAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+        const darkAttribution = '&copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, DeLorme, NAVTEQ';
 
         // Initialize Map centered on North Kolkata to Barasat Corridor
         const map = L.map('map').setView([22.6550, 88.4200], 11);
 
         let currentTileLayer = L.tileLayer(isCurrentlyDark() ? darkTileUrl : lightTileUrl, {
-            attribution: tileAttribution,
-            maxZoom: 19
+            attribution: isCurrentlyDark() ? darkAttribution : lightAttribution,
+            maxZoom: 18
         }).addTo(map);
 
         // Global theme update handler
         window.updateMapTheme = function(isDark) {
             map.removeLayer(currentTileLayer);
             currentTileLayer = L.tileLayer(isDark ? darkTileUrl : lightTileUrl, {
-                attribution: tileAttribution,
-                maxZoom: 19
+                attribution: isDark ? darkAttribution : lightAttribution,
+                maxZoom: 18
             }).addTo(map);
         };
 

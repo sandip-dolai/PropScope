@@ -137,3 +137,25 @@ class PropertyBoundingBoxSearchView(APIView):
             "count": len(properties),
             "results": serializer.data
         })
+
+
+class PropertyNearestAmenitiesView(APIView):
+    """
+    Returns the nearest amenity in each category (Metro, Hospital, School, Mall, Park)
+    for a given property using PostGIS KNN and geodetic distance calculations.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        try:
+            property_obj = Property.objects.get(pk=pk)
+        except Property.DoesNotExist:
+            return Response(
+                {"error": f"Property with id {pk} not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        from apps.amenities.services import AmenitySpatialService
+        data = AmenitySpatialService.get_nearest_amenities_for_property(property_obj)
+        return Response(data)
+

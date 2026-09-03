@@ -3,39 +3,69 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Hero Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-white mb-2">
-            Geospatial Property Discovery & Hybrid AI
-        </h1>
-        <p class="text-slate-400 text-sm sm:text-base max-w-3xl">
-            Find the property that truly fits your lifestyle. Deterministic PostGIS spatial calculations combined with contextual recommendation engines.
-        </p>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <div>
+            <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-white mb-2">
+                Geospatial Property Discovery & Hybrid AI
+            </h1>
+            <p class="text-slate-400 text-sm sm:text-base max-w-2xl">
+                Explore real estate visually. Deterministic PostGIS spatial calculations with radius, polygon, and bounding-box queries.
+            </p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span id="resultsCountBadge" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/30 flex items-center">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2"></span>
+                <span id="resultsCountText">Loading properties...</span>
+            </span>
+        </div>
     </div>
 
-    <!-- Interactive Map & Search Dashboard Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Map Canvas Container (2 Columns on large screens) -->
+    <!-- Quick Filters Bar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-2">Bedrooms:</span>
+            <button class="bhk-filter-btn active px-3 py-1 text-xs font-medium rounded-lg bg-brand-600 text-slate-950 font-bold transition" data-bhk="">All</button>
+            <button class="bhk-filter-btn px-3 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-bhk="2">2 BHK</button>
+            <button class="bhk-filter-btn px-3 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-bhk="3">3 BHK</button>
+            <button class="bhk-filter-btn px-3 py-1 text-xs font-medium rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-bhk="4">4+ BHK</button>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <label class="inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggleAmenities" class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                <span class="ml-2 text-xs font-medium text-slate-300">Show Nearby Amenities (Metro, Hospitals, Parks)</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Interactive Map & Spatial Controls Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Map Canvas Container (2 Columns) -->
         <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[560px] relative">
             <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 z-20 relative">
                 <div class="flex items-center space-x-2">
                     <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Live PostGIS Geospatial View</span>
                 </div>
-                <div class="text-xs text-slate-400">Leaflet.js + OpenStreetMap</div>
+                <div class="flex items-center space-x-3 text-xs text-slate-400">
+                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span> Click to set Radius</span>
+                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-purple-500 mr-1.5"></span> Use Draw tool for Polygon</span>
+                </div>
             </div>
             
             <!-- Floating Search Area Button -->
-            <button id="searchBoundsBtn" class="absolute top-16 left-1/2 transform -translate-x-1/2 z-[1000] bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-full shadow-lg font-bold text-sm hidden transition-colors flex items-center">
+            <button id="searchBoundsBtn" class="absolute top-16 left-1/2 transform -translate-x-1/2 z-[1000] bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-5 py-2 rounded-full shadow-lg text-xs hidden transition-colors flex items-center">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                Search this area
+                Search this area (PostGIS Viewport)
             </button>
             
             <div id="map" class="w-full flex-grow z-10"></div>
         </div>
 
-        <!-- Right Side Panel: Search, Filters & Health Status -->
+        <!-- Right Side Panel: Search, Filters & Quick Actions -->
         <div class="space-y-6">
-            <!-- Radius Search Control -->
+            <!-- Spatial Radius Search Control -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
                 <h3 class="text-base font-bold text-white mb-4 flex items-center">
                     <span class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 mr-2.5">
@@ -46,78 +76,58 @@
                     Spatial Radius Search
                 </h3>
                 <div class="space-y-4">
-                    <p class="text-xs text-slate-400">Click anywhere on the map to find properties within a specific distance.</p>
+                    <p class="text-xs text-slate-400">Click anywhere on the map to query properties within that distance using PostGIS geography calculations.</p>
                     <div>
                         <div class="flex justify-between text-xs text-slate-300 mb-2">
                             <span>Search Radius</span>
                             <span id="radiusValue" class="font-bold text-blue-400">5 km</span>
                         </div>
-                        <input type="range" id="radiusSlider" min="1" max="50" value="5" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        <input type="range" id="radiusSlider" min="1" max="25" value="5" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
                     </div>
                     <div class="flex space-x-3">
-                        <button id="locateMeBtn" class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors flex justify-center items-center">
+                        <button id="locateMeBtn" class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-bold rounded-lg transition-colors flex justify-center items-center">
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                             Locate Me
                         </button>
                         <button id="clearSearchBtn" class="flex-1 py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors hidden">
-                            Clear Search
+                            Clear Spatial Filter
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- System Status Card -->
+            <!-- Spatial Geometry Details Card -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <h3 class="text-base font-bold text-white mb-4 flex items-center">
-                    <span class="p-1.5 rounded-lg bg-brand-500/10 text-brand-400 mr-2.5">
+                <h3 class="text-base font-bold text-white mb-3 flex items-center">
+                    <span class="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 mr-2.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
                         </svg>
                     </span>
-                    Architecture Status
+                    Active Spatial Query
                 </h3>
-                <div class="space-y-3 text-xs">
-                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800/80">
-                        <span class="text-slate-400">Backend Engine</span>
-                        <span class="font-semibold text-emerald-400">Django 5 + DRF</span>
-                    </div>
-                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800/80">
-                        <span class="text-slate-400">Spatial Engine</span>
-                        <span class="font-semibold text-emerald-400">PostGIS (SRID 4326)</span>
-                    </div>
-                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800/80">
-                        <span class="text-slate-400">Cache / Broker</span>
-                        <span class="font-semibold text-emerald-400">Redis 7</span>
-                    </div>
-                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800/80">
-                        <span class="text-slate-400">Recommendation</span>
-                        <span class="font-semibold text-emerald-400">Normal / AI / Hybrid</span>
-                    </div>
+                <div id="activeFilterInfo" class="text-xs text-slate-400 space-y-2">
+                    <p class="flex items-center text-slate-300 font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2"></span>
+                        Full Repository View (All Active Listings)
+                    </p>
+                    <p class="text-[11px] text-slate-500">Draw a polygon using the map tools or click to search a radius.</p>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Quick API Navigation -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <h3 class="text-base font-bold text-white mb-4 flex items-center">
-                    <span class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 mr-2.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                        </svg>
-                    </span>
-                    API Endpoints
-                </h3>
-                <div class="space-y-2 text-xs font-mono">
-                    <a href="/api/v1/properties/" target="_blank" class="block p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-brand-400 hover:border-brand-500/50 transition">
-                        <span class="text-emerald-400 font-bold">GET</span> /api/v1/properties/
-                    </a>
-                    <a href="/api/v1/amenities/nearby/?lat=22.5726&lng=88.3639&radius_km=5" target="_blank" class="block p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-brand-400 hover:border-brand-500/50 transition">
-                        <span class="text-emerald-400 font-bold">GET</span> /api/v1/amenities/nearby/
-                    </a>
-                    <a href="/api/v1/analytics/stats/" target="_blank" class="block p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-brand-400 hover:border-brand-500/50 transition">
-                        <span class="text-emerald-400 font-bold">GET</span> /api/v1/analytics/stats/
-                    </a>
-                </div>
-            </div>
+    <!-- Live Synchronized Properties Feed -->
+    <div class="mb-12">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-extrabold text-white tracking-tight flex items-center">
+                <span>Matching Properties</span>
+                <span id="cardCountPill" class="ml-3 text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">0 properties</span>
+            </h2>
+        </div>
+
+        <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Dynamically populated property cards -->
         </div>
     </div>
 </div>
@@ -126,26 +136,32 @@
 {% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Leaflet Map centered around Kolkata as default reference
-        const map = L.map('map').setView([22.5726, 88.3639], 12);
+        // Initialize Leaflet Map centered on Salt Lake, Kolkata
+        const map = L.map('map').setView([22.5840, 88.4250], 13);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
 
-        // Feature group for property markers
+        // Feature groups
         const propertyLayer = L.featureGroup().addTo(map);
+        const amenityLayer = L.featureGroup().addTo(map);
+        const drawnItems = new L.FeatureGroup().addTo(map);
+
         let searchPin = null;
         let searchCircle = null;
+        let currentProperties = [];
+        let activeBhkFilter = "";
+        let currentApiUrl = '/api/v1/properties/';
 
-        // Leaflet Draw for Polygon Search
-        const drawnItems = new L.FeatureGroup();
-        map.addLayer(drawnItems);
+        // Initialize Leaflet Draw for custom Polygon Search
         const drawControl = new L.Control.Draw({
             edit: { featureGroup: drawnItems },
             draw: {
-                polygon: { shapeOptions: { color: '#8b5cf6' } },
+                polygon: {
+                    shapeOptions: { color: '#a855f7', fillColor: '#a855f7', fillOpacity: 0.15 }
+                },
                 polyline: false,
                 rectangle: false,
                 circle: false,
@@ -158,85 +174,190 @@
         const radiusSlider = document.getElementById('radiusSlider');
         const radiusValue = document.getElementById('radiusValue');
         const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const searchBoundsBtn = document.getElementById('searchBoundsBtn');
+        const activeFilterInfo = document.getElementById('activeFilterInfo');
+        const propertiesGrid = document.getElementById('propertiesGrid');
+        const resultsCountText = document.getElementById('resultsCountText');
+        const cardCountPill = document.getElementById('cardCountPill');
+        const toggleAmenities = document.getElementById('toggleAmenities');
 
-        // Update radius text when slider moves
+        // Radius slider input
         radiusSlider.addEventListener('input', (e) => {
             radiusValue.textContent = `${e.target.value} km`;
-            // If there's an active search, update the circle size and re-fetch
             if (searchPin) {
                 const latlng = searchPin.getLatLng();
                 performRadiusSearch(latlng.lat, latlng.lng, e.target.value);
             }
         });
 
-        // Function to load and plot properties from an API endpoint
-        function loadProperties(url) {
+        // Format price in Indian Rupee format (Lakhs / Crores)
+        function formatINR(price) {
+            const num = Number(price);
+            if (num >= 10000000) {
+                return `₹${(num / 10000000).toFixed(2)} Cr`;
+            } else if (num >= 100000) {
+                return `₹${(num / 100000).toFixed(2)} L`;
+            }
+            return `₹${num.toLocaleString('en-IN')}`;
+        }
+
+        // Render Property Cards in Grid
+        function renderPropertyCards(props) {
+            const filtered = activeBhkFilter 
+                ? props.filter(p => activeBhkFilter === '4' ? p.bedrooms >= 4 : p.bedrooms === Number(activeBhkFilter))
+                : props;
+
+            resultsCountText.textContent = `${filtered.length} properties in view`;
+            cardCountPill.textContent = `${filtered.length} properties`;
+
+            if (filtered.length === 0) {
+                propertiesGrid.innerHTML = `
+                    <div class="col-span-full bg-slate-900/60 border border-slate-800 rounded-2xl p-8 text-center text-slate-400">
+                        <p class="text-base font-semibold mb-1">No properties found in this spatial boundary</p>
+                        <p class="text-xs text-slate-500">Try increasing your search radius, adjusting filters, or panning the map.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            propertiesGrid.innerHTML = filtered.map(prop => `
+                <div class="property-card group bg-slate-900 border border-slate-800 hover:border-brand-500/50 rounded-2xl p-5 shadow-xl transition duration-200 cursor-pointer flex flex-col justify-between"
+                     data-id="${prop.id}" data-lat="${prop.lat}" data-lng="${prop.lng}">
+                    <div>
+                        <div class="flex items-start justify-between mb-3">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                                ${prop.property_type}
+                            </span>
+                            <span class="text-lg font-black text-white">
+                                ${formatINR(prop.price)}
+                            </span>
+                        </div>
+                        <h3 class="text-base font-bold text-white group-hover:text-emerald-400 transition mb-1 line-clamp-1">
+                            ${prop.title}
+                        </h3>
+                        <p class="text-xs text-slate-400 line-clamp-1 mb-4 flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-1 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            ${prop.address}
+                        </p>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-300">
+                        <div class="flex items-center space-x-3">
+                            <span class="font-semibold">${prop.bedrooms} BHK</span>
+                            <span class="text-slate-600">•</span>
+                            <span>${prop.area_sqft} sqft</span>
+                        </div>
+                        <span class="text-[11px] text-slate-400">₹${prop.price_per_sqft}/sqft</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Card click listener: fly to marker on map
+            document.querySelectorAll('.property-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const lat = parseFloat(card.getAttribute('data-lat'));
+                    const lng = parseFloat(card.getAttribute('data-lng'));
+                    const id = parseInt(card.getAttribute('data-id'));
+
+                    map.flyTo([lat, lng], 15, { duration: 1.2 });
+
+                    // Open popup
+                    propertyLayer.eachLayer(layer => {
+                        if (layer.propertyId === id) {
+                            layer.openPopup();
+                        }
+                    });
+                });
+            });
+        }
+
+        // Load and plot properties on map
+        function loadProperties(url, customBbox = null) {
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
-                    propertyLayer.clearLayers(); // Clear existing markers
+                    propertyLayer.clearLayers();
                     const results = data.results || data;
-                    if (Array.isArray(results)) {
-                        results.forEach(prop => {
-                            if (prop.lat && prop.lng) {
-                                const marker = L.marker([prop.lat, prop.lng]).addTo(propertyLayer);
-                                marker.bindPopup(`
-                                    <div class="text-slate-900 font-sans text-xs">
-                                        <h4 class="font-bold text-sm mb-1">${prop.title}</h4>
-                                        <p class="font-semibold text-emerald-600">₹${Number(prop.price).toLocaleString('en-IN')}</p>
-                                        <p class="text-slate-500">${prop.bedrooms} BHK • ${prop.area_sqft} sqft</p>
-                                        <p class="text-slate-400 text-[10px] mt-1">${prop.address}</p>
+                    currentProperties = Array.isArray(results) ? results : [];
+
+                    currentProperties.forEach(prop => {
+                        if (prop.lat && prop.lng) {
+                            const customIcon = L.divIcon({
+                                className: 'bg-transparent',
+                                html: `
+                                    <div class="w-8 h-8 rounded-full bg-emerald-600 border-2 border-slate-900 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                                        ${prop.bedrooms}B
                                     </div>
-                                `);
-                            }
-                        });
-                        
-                        // If it's a radius search and we have results, fit bounds to the circle, else to markers
-                        if (!searchCircle && propertyLayer.getLayers().length > 0) {
-                            map.fitBounds(propertyLayer.getBounds(), { padding: [50, 50] });
+                                `,
+                                iconSize: [32, 32],
+                                iconAnchor: [16, 16]
+                            });
+
+                            const marker = L.marker([prop.lat, prop.lng], { icon: customIcon }).addTo(propertyLayer);
+                            marker.propertyId = prop.id;
+                            marker.bindPopup(`
+                                <div class="text-slate-900 font-sans text-xs min-w-[200px]">
+                                    <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold uppercase text-[9px]">${prop.property_type}</span>
+                                    <h4 class="font-bold text-sm mt-1 mb-0.5">${prop.title}</h4>
+                                    <p class="font-extrabold text-emerald-700 text-sm mb-1">${formatINR(prop.price)}</p>
+                                    <p class="text-slate-600 font-medium">${prop.bedrooms} BHK • ${prop.area_sqft} sqft (₹${prop.price_per_sqft}/sqft)</p>
+                                    <p class="text-slate-400 text-[10px] mt-1 border-t border-slate-200 pt-1">${prop.address}</p>
+                                </div>
+                            `);
                         }
-                    }
+                    });
+
+                    renderPropertyCards(currentProperties);
                 })
                 .catch(err => console.log('Error loading properties:', err));
         }
 
-        // Perform radius search
+        // Perform Radius Search
         function performRadiusSearch(lat, lng, radiusKm) {
-            // Draw or update pin and circle
             if (searchPin) map.removeLayer(searchPin);
             if (searchCircle) map.removeLayer(searchCircle);
-            
+            drawnItems.clearLayers();
+
             searchPin = L.marker([lat, lng], {
                 icon: L.divIcon({
                     className: 'bg-transparent',
-                    html: '<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse"></div>',
+                    html: '<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-xl animate-pulse"></div>',
                     iconSize: [16, 16],
                     iconAnchor: [8, 8]
                 })
             }).addTo(map);
 
             searchCircle = L.circle([lat, lng], {
-                radius: radiusKm * 1000, // convert km to meters for Leaflet
+                radius: radiusKm * 1000,
                 color: '#3b82f6',
                 fillColor: '#3b82f6',
-                fillOpacity: 0.1,
+                fillOpacity: 0.12,
                 weight: 2,
-                dashArray: '5, 5'
+                dashArray: '4, 4'
             }).addTo(map);
 
-            map.fitBounds(searchCircle.getBounds());
+            map.fitBounds(searchCircle.getBounds(), { padding: [30, 30] });
             clearSearchBtn.classList.remove('hidden');
 
-            loadProperties(`/api/v1/properties/radius-search/?lat=${lat}&lng=${lng}&radius_km=${radiusKm}`);
+            activeFilterInfo.innerHTML = `
+                <p class="text-blue-400 font-bold flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span>
+                    PostGIS Radius: ${radiusKm} km
+                </p>
+                <p class="text-slate-400 text-[11px]">Center: [${lat.toFixed(4)}, ${lng.toFixed(4)}]</p>
+            `;
+
+            currentApiUrl = `/api/v1/properties/radius-search/?lat=${lat}&lng=${lng}&radius_km=${radiusKm}`;
+            loadProperties(currentApiUrl);
         }
 
-        // Map Click Event Listener
+        // Map Click to Trigger Radius Search
         map.on('click', function(e) {
             const radius = radiusSlider.value;
             performRadiusSearch(e.latlng.lat, e.latlng.lng, radius);
         });
 
-        // Clear Search Event
+        // Clear Spatial Search Filter
         clearSearchBtn.addEventListener('click', () => {
             if (searchPin) map.removeLayer(searchPin);
             if (searchCircle) map.removeLayer(searchCircle);
@@ -244,24 +365,41 @@
             searchPin = null;
             searchCircle = null;
             clearSearchBtn.classList.add('hidden');
-            loadProperties('/api/v1/properties/'); // Reload all
+            searchBoundsBtn.classList.add('hidden');
+
+            activeFilterInfo.innerHTML = `
+                <p class="flex items-center text-slate-300 font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2"></span>
+                    Full Repository View (All Active Listings)
+                </p>
+                <p class="text-[11px] text-slate-500">Draw a polygon using the map tools or click to search a radius.</p>
+            `;
+
+            currentApiUrl = '/api/v1/properties/';
+            loadProperties(currentApiUrl);
         });
 
-        // Polygon Draw Event
+        // Polygon Draw Event (Leaflet.Draw)
         map.on(L.Draw.Event.CREATED, function (event) {
             const layer = event.layer;
             drawnItems.clearLayers();
             drawnItems.addLayer(layer);
-            
-            // Clear radius search items
+
             if (searchPin) map.removeLayer(searchPin);
             if (searchCircle) map.removeLayer(searchCircle);
-            searchPin = null; searchCircle = null;
+            searchPin = null;
+            searchCircle = null;
             clearSearchBtn.classList.remove('hidden');
 
             const geojson = layer.toGeoJSON();
-            
-            // Get CSRF Token from cookies
+            activeFilterInfo.innerHTML = `
+                <p class="text-purple-400 font-bold flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
+                    PostGIS Custom Polygon Containment
+                </p>
+                <p class="text-slate-400 text-[11px]">Vertices: ${geojson.geometry.coordinates[0].length} boundary points</p>
+            `;
+
             const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
 
             fetch('/api/v1/properties/polygon-search/', {
@@ -276,29 +414,65 @@
             .then(data => {
                 propertyLayer.clearLayers();
                 const results = data.results || data;
-                if (Array.isArray(results)) {
-                    results.forEach(prop => {
-                        if (prop.lat && prop.lng) {
-                            const marker = L.marker([prop.lat, prop.lng]).addTo(propertyLayer);
-                            marker.bindPopup(`
-                                <div class="text-slate-900 font-sans text-xs">
-                                    <h4 class="font-bold text-sm mb-1">${prop.title}</h4>
-                                    <p class="font-semibold text-emerald-600">₹${Number(prop.price).toLocaleString('en-IN')}</p>
-                                    <p class="text-slate-500">${prop.bedrooms} BHK • ${prop.area_sqft} sqft</p>
-                                    <p class="text-slate-400 text-[10px] mt-1">${prop.address}</p>
+                currentProperties = Array.isArray(results) ? results : [];
+
+                currentProperties.forEach(prop => {
+                    if (prop.lat && prop.lng) {
+                        const customIcon = L.divIcon({
+                            className: 'bg-transparent',
+                            html: `
+                                <div class="w-8 h-8 rounded-full bg-purple-600 border-2 border-slate-900 text-white font-black text-[10px] flex items-center justify-center shadow-lg">
+                                    ${prop.bedrooms}B
                                 </div>
-                            `);
-                        }
-                    });
-                    if (propertyLayer.getLayers().length > 0) {
-                        map.fitBounds(propertyLayer.getBounds(), { padding: [50, 50] });
+                            `,
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 16]
+                        });
+
+                        const marker = L.marker([prop.lat, prop.lng], { icon: customIcon }).addTo(propertyLayer);
+                        marker.propertyId = prop.id;
+                        marker.bindPopup(`
+                            <div class="text-slate-900 font-sans text-xs min-w-[200px]">
+                                <span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 font-bold uppercase text-[9px]">${prop.property_type}</span>
+                                <h4 class="font-bold text-sm mt-1 mb-0.5">${prop.title}</h4>
+                                <p class="font-extrabold text-purple-700 text-sm mb-1">${formatINR(prop.price)}</p>
+                                <p class="text-slate-600 font-medium">${prop.bedrooms} BHK • ${prop.area_sqft} sqft</p>
+                            </div>
+                        `);
                     }
-                }
+                });
+
+                renderPropertyCards(currentProperties);
             })
             .catch(err => console.log('Error in polygon search:', err));
         });
 
-        // Locate Me Event
+        // Bounding Box Viewport Search
+        map.on('moveend', () => {
+            if (!searchPin && drawnItems.getLayers().length === 0) {
+                searchBoundsBtn.classList.remove('hidden');
+            }
+        });
+
+        searchBoundsBtn.addEventListener('click', () => {
+            const bounds = map.getBounds();
+            const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
+
+            searchBoundsBtn.classList.add('hidden');
+            activeFilterInfo.innerHTML = `
+                <p class="text-emerald-400 font-bold flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2"></span>
+                    PostGIS Viewport Bounding Box
+                </p>
+                <p class="text-slate-400 text-[11px]">BBox: ${bounds.getWest().toFixed(3)}, ${bounds.getSouth().toFixed(3)} to ${bounds.getEast().toFixed(3)}, ${bounds.getNorth().toFixed(3)}</p>
+            `;
+
+            clearSearchBtn.classList.remove('hidden');
+            currentApiUrl = `/api/v1/properties/bbox-search/?bbox=${bbox}`;
+            loadProperties(currentApiUrl);
+        });
+
+        // Geolocation
         const locateMeBtn = document.getElementById('locateMeBtn');
         locateMeBtn.addEventListener('click', () => {
             if ("geolocation" in navigator) {
@@ -308,56 +482,71 @@
                         const lat = position.coords.latitude;
                         const lng = position.coords.longitude;
                         const radius = radiusSlider.value;
-                        
-                        // Center map on user
                         map.setView([lat, lng], 14);
                         performRadiusSearch(lat, lng, radius);
-                        
                         locateMeBtn.innerHTML = '<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Locate Me';
                     },
-                    function(error) {
-                        console.error("Error getting location:", error);
-                        alert("Could not get your location. Please check browser permissions.");
+                    function(err) {
+                        alert("Could not access location. Please check browser permissions.");
                         locateMeBtn.innerHTML = '<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Locate Me';
                     }
                 );
+            }
+        });
+
+        // BHK Filter Buttons
+        document.querySelectorAll('.bhk-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.bhk-filter-btn').forEach(b => {
+                    b.classList.remove('bg-brand-600', 'text-slate-950', 'font-bold');
+                    b.classList.add('bg-slate-800', 'text-slate-300');
+                });
+                btn.classList.add('bg-brand-600', 'text-slate-950', 'font-bold');
+                btn.classList.remove('bg-slate-800', 'text-slate-300');
+
+                activeBhkFilter = btn.getAttribute('data-bhk');
+                renderPropertyCards(currentProperties);
+            });
+        });
+
+        // Toggle Amenities Layer
+        toggleAmenities.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                fetch('/api/v1/amenities/')
+                    .then(res => res.json())
+                    .then(data => {
+                        amenityLayer.clearLayers();
+                        const amenities = data.results || data;
+                        amenities.forEach(am => {
+                            if (am.lat && am.lng) {
+                                let badgeColor = 'bg-amber-500';
+                                if (am.category_name.includes('Metro')) badgeColor = 'bg-blue-500';
+                                else if (am.category_name.includes('Hospital')) badgeColor = 'bg-rose-500';
+                                else if (am.category_name.includes('Park')) badgeColor = 'bg-emerald-500';
+                                else if (am.category_name.includes('Mall')) badgeColor = 'bg-fuchsia-500';
+
+                                const amenityIcon = L.divIcon({
+                                    className: 'bg-transparent',
+                                    html: `<div class="w-4 h-4 rounded-full ${badgeColor} border border-white shadow-md"></div>`,
+                                    iconSize: [16, 16],
+                                    iconAnchor: [8, 8]
+                                });
+
+                                const marker = L.marker([am.lat, am.lng], { icon: amenityIcon }).addTo(amenityLayer);
+                                marker.bindPopup(`
+                                    <div class="text-slate-900 font-sans text-xs">
+                                        <span class="font-bold text-slate-500 uppercase text-[9px]">${am.category_name}</span>
+                                        <h5 class="font-bold text-sm text-slate-900 mb-0.5">${am.name}</h5>
+                                        <p class="text-slate-500 text-[10px]">${am.address || ''}</p>
+                                    </div>
+                                `);
+                            }
+                        });
+                    })
+                    .catch(err => console.log('Error loading amenities:', err));
             } else {
-                alert("Geolocation is not supported by your browser.");
+                amenityLayer.clearLayers();
             }
-        });
-
-        // Bounding Box Search Logic
-        const searchBoundsBtn = document.getElementById('searchBoundsBtn');
-        
-        // Show button when map is panned/zoomed
-        map.on('moveend', () => {
-            // Don't show if we are actively drawing or if a pin is dropped (unless they want to override)
-            if (!searchPin) {
-                searchBoundsBtn.classList.remove('hidden');
-            }
-        });
-
-        // Perform bounding box search on click
-        searchBoundsBtn.addEventListener('click', () => {
-            const bounds = map.getBounds();
-            const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
-            
-            // Clear any active radius searches
-            if (searchPin) map.removeLayer(searchPin);
-            if (searchCircle) map.removeLayer(searchCircle);
-            searchPin = null;
-            searchCircle = null;
-            clearSearchBtn.classList.add('hidden');
-            
-            searchBoundsBtn.classList.add('hidden');
-            searchBoundsBtn.innerHTML = '<span class="animate-pulse">Searching...</span>';
-            
-            loadProperties(`/api/v1/properties/bbox-search/?bbox=${bbox}`);
-            
-            // Reset button text for next time
-            setTimeout(() => {
-                searchBoundsBtn.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Search this area';
-            }, 1000);
         });
 
         // Initial Load

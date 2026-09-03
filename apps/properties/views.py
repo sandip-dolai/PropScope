@@ -1,4 +1,4 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
@@ -43,6 +43,8 @@ class PropertyRadiusSearchView(APIView):
     """
     Search properties within a specified radius (km) from a latitude/longitude point using PostGIS.
     """
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
         try:
             lat = float(request.query_params.get('lat'))
@@ -73,6 +75,8 @@ class PropertyPolygonSearchView(APIView):
     """
     Search properties contained within a GeoJSON Polygon using PostGIS location__within.
     """
+    permission_classes = [permissions.AllowAny]
+
     def post(self, request):
         geojson_data = request.data.get('geojson')
         if not geojson_data:
@@ -103,6 +107,7 @@ class PropertyBoundingBoxSearchView(APIView):
     Search properties contained within a bounding box (viewport).
     Expects bbox parameter in format: minLng,minLat,maxLng,maxLat
     """
+    permission_classes = [permissions.AllowAny]
     def get(self, request):
         bbox_str = request.query_params.get('bbox')
         if not bbox_str:

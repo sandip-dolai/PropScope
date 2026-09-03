@@ -25,6 +25,7 @@ env = environ.Env(
     GEMINI_API_KEY=(str, ''),
     NOMINATIM_USER_AGENT=(str, 'propscope-app'),
     OSRM_URL=(str, 'http://router.project-osrm.org'),
+    DEMO_MODE=(bool, True),
 )
 
 # Read .env file if present
@@ -33,6 +34,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('DJANGO_SECRET_KEY')
 DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+DEMO_MODE = env('DEMO_MODE')
 
 # Application definition
 DJANGO_APPS = [

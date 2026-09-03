@@ -1,0 +1,290 @@
+<!-- Dual-Tab Authentication & Persona Switcher Modal -->
+<div id="authModal" class="fixed inset-0 z-[3000] bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative max-h-[95vh] overflow-y-auto transition-colors">
+        
+        <!-- Modal Header & Close -->
+        <div class="flex items-start justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
+            <div>
+                <div class="flex items-center space-x-2 mb-1">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400">PropScope Access Control</span>
+                </div>
+                <h3 id="authModalHeaderTitle" class="text-xl font-extrabold text-slate-900 dark:text-white">Account Authentication</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Session-authenticated role access for buyers & agents</p>
+            </div>
+            <button id="closeAuthModalBtn" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <!-- Tab Selector: Sign In vs Register -->
+        <div class="flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 mb-5">
+            <button id="tabSignInBtn" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm transition">
+                Sign In
+            </button>
+            <button id="tabRegisterBtn" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+                Create Account
+            </button>
+        </div>
+
+        <!-- Feedback Alert Banner -->
+        <div id="authAlert" class="hidden mb-4 p-3 rounded-xl text-xs font-medium border transition"></div>
+
+        <!-- 1. SIGN IN FORM -->
+        <form id="signInForm" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Username</label>
+                <input type="text" id="signInUsername" required placeholder="e.g. buyer_rahul or agent_priya"
+                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Password</label>
+                <input type="password" id="signInPassword" required placeholder="••••••••"
+                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition">
+            </div>
+            <button type="submit" id="signInSubmitBtn"
+                    class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-sm flex items-center justify-center space-x-2">
+                <span>Sign In to Session</span>
+            </button>
+        </form>
+
+        <!-- 2. REGISTER FORM (Initially Hidden) -->
+        <form id="registerForm" class="space-y-4 hidden">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Username</label>
+                <input type="text" id="regUsername" required placeholder="Choose a username"
+                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Email Address</label>
+                <input type="email" id="regEmail" required placeholder="name@example.com"
+                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Password</label>
+                    <input type="password" id="regPassword" required placeholder="••••••••"
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Role Persona</label>
+                    <select id="regRole"
+                            class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs font-bold focus:outline-none focus:border-emerald-500 transition cursor-pointer">
+                        <option value="BUYER">Buyer / Investor</option>
+                        <option value="AGENT">Agent / Broker</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Agent Specific Fields (Conditional) -->
+            <div id="agentExtraFields" class="hidden p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Agency Name</label>
+                    <input type="text" id="regAgencyName" placeholder="e.g. Skyline Realtors"
+                           class="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">RERA License Number</label>
+                    <input type="text" id="regLicenseNumber" placeholder="e.g. WB-RERA-2024-XXXX"
+                           class="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+
+            <button type="submit" id="registerSubmitBtn"
+                    class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-sm flex items-center justify-center space-x-2">
+                <span>Complete Registration</span>
+            </button>
+        </form>
+
+        <!-- 3. 1-CLICK INSTANT DEMO PERSONAS -->
+        <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+            <div class="text-center mb-3">
+                <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400 dark:text-slate-500">
+                    Or Explore Instantly As Demo Persona
+                </span>
+            </div>
+            <div class="space-y-2">
+                <button type="button" class="demo-login-btn w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold transition flex items-center justify-between group"
+                        data-persona="buyer">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-black">B</span>
+                        <span class="text-left">
+                            <span class="block">Buyer Persona: Rahul Sen</span>
+                            <span class="block text-[10px] font-normal text-slate-500 dark:text-slate-400">Personalized discovery, saved searches & favorites</span>
+                        </span>
+                    </div>
+                    <span class="text-[10px] text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform font-extrabold">Instant Login &rarr;</span>
+                </button>
+
+                <button type="button" class="demo-login-btn w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold transition flex items-center justify-between group"
+                        data-persona="agent">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">A</span>
+                        <span class="text-left">
+                            <span class="block">Agent Persona: Priya Mukherjee</span>
+                            <span class="block text-[10px] font-normal text-slate-500 dark:text-slate-400">50 North Kolkata listings under management</span>
+                        </span>
+                    </div>
+                    <span class="text-[10px] text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform font-extrabold">Instant Login &rarr;</span>
+                </button>
+
+                <button type="button" class="demo-login-btn w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold transition flex items-center justify-between group"
+                        data-persona="admin">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="w-6 h-6 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs font-black">S</span>
+                        <span class="text-left">
+                            <span class="block">Superuser: Platform Admin</span>
+                            <span class="block text-[10px] font-normal text-slate-500 dark:text-slate-400">Full system governance & spatial data tools</span>
+                        </span>
+                    </div>
+                    <span class="text-[10px] text-purple-600 dark:text-purple-400 group-hover:translate-x-0.5 transition-transform font-extrabold">Instant Login &rarr;</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const authModal = document.getElementById('authModal');
+        const openAuthModalBtn = document.getElementById('openAuthModalBtn');
+        const closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
+        const tabSignInBtn = document.getElementById('tabSignInBtn');
+        const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+        const signInForm = document.getElementById('signInForm');
+        const registerForm = document.getElementById('registerForm');
+        const regRole = document.getElementById('regRole');
+        const agentExtraFields = document.getElementById('agentExtraFields');
+        const authAlert = document.getElementById('authAlert');
+
+        function showAlert(msg, isError = true) {
+            authAlert.textContent = msg;
+            authAlert.className = isError
+                ? 'mb-4 p-3 rounded-xl text-xs font-medium border bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/30'
+                : 'mb-4 p-3 rounded-xl text-xs font-medium border bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30';
+            authAlert.classList.remove('hidden');
+        }
+
+        function hideAlert() {
+            authAlert.classList.add('hidden');
+        }
+
+        // Open Modal
+        window.openAuthModal = function() {
+            hideAlert();
+            authModal.classList.remove('hidden');
+        };
+
+        if (openAuthModalBtn) {
+            openAuthModalBtn.addEventListener('click', window.openAuthModal);
+        }
+
+        // Close Modal
+        function closeAuthModal() {
+            authModal.classList.add('hidden');
+            hideAlert();
+        }
+        if (closeAuthModalBtn) {
+            closeAuthModalBtn.addEventListener('click', closeAuthModal);
+        }
+
+        // Tab Switching
+        tabSignInBtn.addEventListener('click', () => {
+            hideAlert();
+            tabSignInBtn.classList.add('bg-white', 'dark:bg-slate-900', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+            tabSignInBtn.classList.remove('text-slate-500', 'dark:text-slate-400');
+            tabRegisterBtn.classList.remove('bg-white', 'dark:bg-slate-900', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+            tabRegisterBtn.classList.add('text-slate-500', 'dark:text-slate-400');
+            signInForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        });
+
+        tabRegisterBtn.addEventListener('click', () => {
+            hideAlert();
+            tabRegisterBtn.classList.add('bg-white', 'dark:bg-slate-900', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+            tabRegisterBtn.classList.remove('text-slate-500', 'dark:text-slate-400');
+            tabSignInBtn.classList.remove('bg-white', 'dark:bg-slate-900', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+            tabSignInBtn.classList.add('text-slate-500', 'dark:text-slate-400');
+            registerForm.classList.remove('hidden');
+            signInForm.classList.add('hidden');
+        });
+
+        // Role Selector Change
+        regRole.addEventListener('change', (e) => {
+            if (e.target.value === 'AGENT') {
+                agentExtraFields.classList.remove('hidden');
+            } else {
+                agentExtraFields.classList.add('hidden');
+            }
+        });
+
+        // Handle Sign In Submit
+        signInForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert();
+            const username = document.getElementById('signInUsername').value.trim();
+            const password = document.getElementById('signInPassword').value;
+
+            try {
+                const data = await window.apiClient('/api/v1/auth/login/', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                showAlert('Signed in successfully! Refreshing session...', false);
+                setTimeout(() => window.location.reload(), 600);
+            } catch (err) {
+                showAlert(err.message || 'Invalid username or password.');
+            }
+        });
+
+        // Handle Register Submit
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert();
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const role = regRole.value;
+
+            const payload = { username, email, password, role };
+            if (role === 'AGENT') {
+                payload.agency_name = document.getElementById('regAgencyName').value.trim();
+                payload.license_number = document.getElementById('regLicenseNumber').value.trim();
+            }
+
+            try {
+                const data = await window.apiClient('/api/v1/auth/register/', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                showAlert('Account registered successfully! Signing in...', false);
+                // Auto login
+                await window.apiClient('/api/v1/auth/login/', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                setTimeout(() => window.location.reload(), 600);
+            } catch (err) {
+                showAlert(err.message || 'Registration failed. Please check form inputs.');
+            }
+        });
+
+        // Handle 1-Click Demo Login
+        document.querySelectorAll('.demo-login-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                hideAlert();
+                const persona = btn.getAttribute('data-persona');
+                try {
+                    const data = await window.apiClient('/api/v1/auth/demo-login/', {
+                        method: 'POST',
+                        body: JSON.stringify({ persona })
+                    });
+                    showAlert(data.message || 'Demo session active! Refreshing...', false);
+                    setTimeout(() => window.location.reload(), 500);
+                } catch (err) {
+                    showAlert(err.message || 'Demo login failed.');
+                }
+            });
+        });
+    });
+</script>

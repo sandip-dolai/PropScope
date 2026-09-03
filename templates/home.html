@@ -139,6 +139,22 @@
         let searchPin = null;
         let searchCircle = null;
 
+        // Leaflet Draw for Polygon Search
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+        const drawControl = new L.Control.Draw({
+            edit: { featureGroup: drawnItems },
+            draw: {
+                polygon: { shapeOptions: { color: '#8b5cf6' } },
+                polyline: false,
+                rectangle: false,
+                circle: false,
+                marker: false,
+                circlemarker: false
+            }
+        });
+        map.addControl(drawControl);
+
         const radiusSlider = document.getElementById('radiusSlider');
         const radiusValue = document.getElementById('radiusValue');
         const clearSearchBtn = document.getElementById('clearSearchBtn');
@@ -224,10 +240,62 @@
         clearSearchBtn.addEventListener('click', () => {
             if (searchPin) map.removeLayer(searchPin);
             if (searchCircle) map.removeLayer(searchCircle);
+            drawnItems.clearLayers();
             searchPin = null;
             searchCircle = null;
             clearSearchBtn.classList.add('hidden');
             loadProperties('/api/v1/properties/'); // Reload all
+        });
+
+        // Polygon Draw Event
+        map.on(L.Draw.Event.CREATED, function (event) {
+            const layer = event.layer;
+            drawnItems.clearLayers();
+            drawnItems.addLayer(layer);
+            
+            // Clear radius search items
+            if (searchPin) map.removeLayer(searchPin);
+            if (searchCircle) map.removeLayer(searchCircle);
+            searchPin = null; searchCircle = null;
+            clearSearchBtn.classList.remove('hidden');
+
+            const geojson = layer.toGeoJSON();
+            
+            // Get CSRF Token from cookies
+            const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
+
+            fetch('/api/v1/properties/polygon-search/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ geojson: geojson.geometry })
+            })
+            .then(res => res.json())
+            .then(data => {
+                propertyLayer.clearLayers();
+                const results = data.results || data;
+                if (Array.isArray(results)) {
+                    results.forEach(prop => {
+                        if (prop.lat && prop.lng) {
+                            const marker = L.marker([prop.lat, prop.lng]).addTo(propertyLayer);
+                            marker.bindPopup(`
+                                <div class="text-slate-900 font-sans text-xs">
+                                    <h4 class="font-bold text-sm mb-1">${prop.title}</h4>
+                                    <p class="font-semibold text-emerald-600">₹${Number(prop.price).toLocaleString('en-IN')}</p>
+                                    <p class="text-slate-500">${prop.bedrooms} BHK • ${prop.area_sqft} sqft</p>
+                                    <p class="text-slate-400 text-[10px] mt-1">${prop.address}</p>
+                                </div>
+                            `);
+                        }
+                    });
+                    if (propertyLayer.getLayers().length > 0) {
+                        map.fitBounds(propertyLayer.getBounds(), { padding: [50, 50] });
+                    }
+                }
+            })
+            .catch(err => console.log('Error in polygon search:', err));
         });
 
         // Locate Me Event

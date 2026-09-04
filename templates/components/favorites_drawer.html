@@ -1,0 +1,254 @@
+<!-- Slide-Out Buyer Favorites Drawer -->
+<div id="favoritesDrawerBackdrop" class="fixed inset-0 z-[2500] bg-slate-950/40 backdrop-blur-[2px] hidden transition-opacity lg:bg-transparent lg:pointer-events-none"></div>
+
+<aside id="favoritesDrawer"
+       class="fixed top-0 bottom-0 right-0 z-[2501] w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col pointer-events-auto">
+    
+    <!-- Drawer Header -->
+    <div class="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+        <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white">My Saved Assets</h3>
+                    <span id="favoritesDrawerBadge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20">
+                        0
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Bookmarked listings for comparison</p>
+            </div>
+        </div>
+
+        <button id="closeFavoritesDrawerBtn" type="button" title="Close Drawer"
+                class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+
+    <!-- Drawer Content / List -->
+    <div id="favoritesListContainer" class="flex-grow overflow-y-auto p-4 space-y-3">
+        <div class="py-12 text-center text-slate-400 dark:text-slate-500">
+            <div class="inline-block w-6 h-6 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p class="text-xs font-semibold">Loading bookmarked assets...</p>
+        </div>
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="p-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between text-xs">
+        <span class="text-[11px] text-slate-500 dark:text-slate-400">
+            Saved to authenticated buyer account
+        </span>
+        <button id="closeFavoritesDrawerFooterBtn" type="button"
+                class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold transition">
+            Close
+        </button>
+    </div>
+
+</aside>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const favoritesDrawer = document.getElementById('favoritesDrawer');
+        const favoritesDrawerBackdrop = document.getElementById('favoritesDrawerBackdrop');
+        const closeFavoritesDrawerBtn = document.getElementById('closeFavoritesDrawerBtn');
+        const closeFavoritesDrawerFooterBtn = document.getElementById('closeFavoritesDrawerFooterBtn');
+        const navOpenFavoritesBtn = document.getElementById('navOpenFavoritesBtn');
+        const favoritesListContainer = document.getElementById('favoritesListContainer');
+        const favoritesDrawerBadge = document.getElementById('favoritesDrawerBadge');
+
+        // Global in-memory set of favorited property IDs
+        window.userFavoriteIds = new Set();
+
+        // Check if user is authenticated (checked via Django template context or cookie)
+        const isUserAuthenticated = {% if request.user.is_authenticated %}true{% else %}false{% endif %};
+
+        // Open Favorites Drawer
+        window.openFavoritesDrawer = function() {
+            favoritesDrawerBackdrop.classList.remove('hidden');
+            favoritesDrawer.classList.remove('translate-x-full');
+            loadFavoritesList();
+        };
+
+        // Close Favorites Drawer
+        window.closeFavoritesDrawer = function() {
+            favoritesDrawerBackdrop.classList.add('hidden');
+            favoritesDrawer.classList.add('translate-x-full');
+        };
+
+        if (closeFavoritesDrawerBtn) closeFavoritesDrawerBtn.addEventListener('click', window.closeFavoritesDrawer);
+        if (closeFavoritesDrawerFooterBtn) closeFavoritesDrawerFooterBtn.addEventListener('click', window.closeFavoritesDrawer);
+        if (favoritesDrawerBackdrop) favoritesDrawerBackdrop.addEventListener('click', window.closeFavoritesDrawer);
+        if (navOpenFavoritesBtn) navOpenFavoritesBtn.addEventListener('click', window.openFavoritesDrawer);
+
+        // Fetch User's Favorited IDs on page load
+        if (isUserAuthenticated) {
+            window.apiClient('/api/v1/favorites/ids/')
+                .then(data => {
+                    if (data && data.favorite_ids) {
+                        window.userFavoriteIds = new Set(data.favorite_ids);
+                        updateNavbarFavoritesCount(window.userFavoriteIds.size);
+                        syncCardHeartIcons();
+                    }
+                })
+                .catch(err => console.warn('Could not load favorite IDs:', err));
+        }
+
+        function updateNavbarFavoritesCount(count) {
+            if (favoritesDrawerBadge) favoritesDrawerBadge.textContent = count;
+            const navBadge = document.getElementById('navFavoritesCount');
+            if (navBadge) navBadge.textContent = count;
+        }
+
+        // Synchronize heart button appearances across property cards
+        window.syncCardHeartIcons = function() {
+            document.querySelectorAll('.favorite-toggle-btn').forEach(btn => {
+                const propId = parseInt(btn.getAttribute('data-id'));
+                const isFav = window.userFavoriteIds.has(propId);
+                const svg = btn.querySelector('svg');
+                if (isFav) {
+                    btn.classList.add('text-rose-500', 'bg-rose-50', 'dark:bg-rose-500/15');
+                    btn.classList.remove('text-slate-400', 'dark:text-slate-500');
+                    if (svg) svg.setAttribute('fill', 'currentColor');
+                } else {
+                    btn.classList.remove('text-rose-500', 'bg-rose-50', 'dark:bg-rose-500/15');
+                    btn.classList.add('text-slate-400', 'dark:text-slate-500');
+                    if (svg) svg.setAttribute('fill', 'none');
+                }
+            });
+
+            // Also sync drawer favorite button if open
+            const drawerFavBtn = document.getElementById('drawerSaveFavoriteBtn');
+            if (drawerFavBtn && window.activeDrawerPropertyId) {
+                const isFav = window.userFavoriteIds.has(window.activeDrawerPropertyId);
+                drawerFavBtn.querySelector('span').textContent = isFav ? 'Bookmarked' : 'Bookmark Asset';
+                const svg = drawerFavBtn.querySelector('svg');
+                if (isFav) {
+                    drawerFavBtn.classList.add('text-rose-600', 'border-rose-200', 'bg-rose-50', 'dark:bg-rose-500/10');
+                    if (svg) svg.setAttribute('fill', 'currentColor');
+                } else {
+                    drawerFavBtn.classList.remove('text-rose-600', 'border-rose-200', 'bg-rose-50', 'dark:bg-rose-500/10');
+                    if (svg) svg.setAttribute('fill', 'none');
+                }
+            }
+        };
+
+        // Global Toggle Favorite Action
+        window.toggleFavorite = async function(propertyId) {
+            // Guest Guard
+            if (!isUserAuthenticated) {
+                if (window.openAuthModal) {
+                    window.openAuthModal();
+                    const authAlert = document.getElementById('authAlert');
+                    if (authAlert) {
+                        authAlert.textContent = 'Please sign in or use a 1-click demo persona to bookmark assets.';
+                        authAlert.className = 'mb-4 p-3 rounded-xl text-xs font-bold border bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30';
+                        authAlert.classList.remove('hidden');
+                    }
+                }
+                return;
+            }
+
+            const isFav = window.userFavoriteIds.has(propertyId);
+            try {
+                if (isFav) {
+                    // Remove favorite
+                    await window.apiClient(`/api/v1/favorites/${propertyId}/`, { method: 'DELETE' });
+                    window.userFavoriteIds.delete(propertyId);
+                } else {
+                    // Add favorite
+                    await window.apiClient('/api/v1/favorites/', {
+                        method: 'POST',
+                        body: JSON.stringify({ property_id: propertyId })
+                    });
+                    window.userFavoriteIds.add(propertyId);
+                }
+
+                updateNavbarFavoritesCount(window.userFavoriteIds.size);
+                syncCardHeartIcons();
+
+                // If favorites drawer is currently open, refresh its list
+                if (!favoritesDrawer.classList.contains('translate-x-full')) {
+                    loadFavoritesList();
+                }
+            } catch (err) {
+                console.error('Favorite action failed:', err);
+            }
+        };
+
+        // Wire Drawer Bookmark Button
+        const drawerSaveFavoriteBtn = document.getElementById('drawerSaveFavoriteBtn');
+        if (drawerSaveFavoriteBtn) {
+            drawerSaveFavoriteBtn.addEventListener('click', () => {
+                if (window.activeDrawerPropertyId) {
+                    window.toggleFavorite(window.activeDrawerPropertyId);
+                }
+            });
+        }
+
+        // Load Full Favorites List in Drawer
+        async function loadFavoritesList() {
+            try {
+                const favorites = await window.apiClient('/api/v1/favorites/');
+                if (!favorites || favorites.length === 0) {
+                    favoritesListContainer.innerHTML = `
+                        <div class="py-16 text-center text-slate-400 dark:text-slate-500 px-4">
+                            <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">No Saved Assets Yet</h4>
+                            <p class="text-xs max-w-xs mx-auto">Explore properties on the map and click the heart icon to save listings to your private investor watchlist.</p>
+                        </div>
+                    `;
+                    updateNavbarFavoritesCount(0);
+                    return;
+                }
+
+                updateNavbarFavoritesCount(favorites.length);
+
+                favoritesListContainer.innerHTML = favorites.map(prop => {
+                    const priceNum = parseFloat(prop.price);
+                    let formattedPrice = '₹' + priceNum.toLocaleString('en-IN');
+                    if (priceNum >= 10000000) {
+                        formattedPrice = `₹${(priceNum / 10000000).toFixed(2)} Cr`;
+                    } else if (priceNum >= 100000) {
+                        formattedPrice = `₹${(priceNum / 100000).toFixed(2)} L`;
+                    }
+
+                    return `
+                        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition space-y-2.5">
+                            <div class="flex items-start justify-between">
+                                <div class="min-w-0 pr-2">
+                                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">${prop.property_type}</span>
+                                    <h4 class="text-xs font-bold text-slate-900 dark:text-white truncate">${prop.title}</h4>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${prop.address}</p>
+                                </div>
+                                <button onclick="window.toggleFavorite(${prop.id})" title="Remove from favorites"
+                                        class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/15 transition flex-shrink-0">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                </button>
+                            </div>
+                            <div class="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs">
+                                <div>
+                                    <span class="font-black text-slate-900 dark:text-white">${formattedPrice}</span>
+                                    <span class="text-[10px] text-slate-400 ml-1.5">${prop.bedrooms} BHK • ${prop.area_sqft} sqft</span>
+                                </div>
+                                <button onclick="window.openAssetDrawer(${prop.id}); window.closeFavoritesDrawer();"
+                                        class="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center space-x-1">
+                                    <span>Inspect &rarr;</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                favoritesListContainer.innerHTML = `
+                    <div class="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs text-center">
+                        Could not load saved assets. Please try again.
+                    </div>
+                `;
+            }
+        }
+    });
+</script>

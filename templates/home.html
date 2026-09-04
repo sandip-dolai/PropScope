@@ -50,8 +50,74 @@
             <label class="inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="toggleAmenities" class="sr-only peer">
                 <div class="w-9 h-5 bg-slate-300 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                <span class="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">Transit & Civic Infrastructure Overlay</span>
+                <span class="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">Transit Overlay</span>
             </label>
+
+            <!-- Save Spatial Search Trigger -->
+            <button id="openSaveSearchModalBtn" type="button"
+                    class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 transition shadow-sm flex items-center space-x-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                <span>Save Search</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Save Active Spatial Search Modal -->
+    <div id="saveSearchModalBackdrop" class="fixed inset-0 z-[2600] bg-slate-950/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-md w-full p-6 relative">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Save Spatial Search</h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Bookmark active geofence & filters</p>
+                    </div>
+                </div>
+                <button id="closeSaveSearchModalBtn" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Parameters Preview Card -->
+            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 mb-4 space-y-1.5 text-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 text-[11px]">Spatial Operator:</span>
+                    <span id="saveModalOperatorBadge" class="font-extrabold text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">Geodesic Radius</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 text-[11px]">Configuration:</span>
+                    <span id="saveModalBhkBadge" class="font-bold text-slate-800 dark:text-slate-200">All Configurations</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 text-[11px]">Boundary Details:</span>
+                    <span id="saveModalSummary" class="text-[11px] font-mono text-slate-600 dark:text-slate-400">5.0 km Buffer</span>
+                </div>
+            </div>
+
+            <form id="saveSearchForm" class="space-y-4">
+                <div>
+                    <label for="saveSearchTitleInput" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Search Label / Title
+                    </label>
+                    <input type="text" id="saveSearchTitleInput" required maxlength="150"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 shadow-sm"
+                           placeholder="e.g. 3 BHK within 5km New Town">
+                </div>
+
+                <div id="saveSearchAlert" class="hidden p-2.5 rounded-xl text-xs font-semibold"></div>
+
+                <div class="flex items-center justify-end space-x-2.5 pt-2">
+                    <button type="button" id="cancelSaveSearchBtn" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" id="confirmSaveSearchBtn" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-500/20 transition flex items-center space-x-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Save Search</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -208,6 +274,13 @@
         let currentProperties = [];
         let activeBhkFilter = "";
         let currentApiUrl = '/api/v1/properties/';
+        const isUserAuthenticated = {% if request.user.is_authenticated %}true{% else %}false{% endif %};
+
+        let activeSpatialState = {
+            mode: 'all',
+            params: {},
+            summary: 'Global Metropolitan Corridor'
+        };
 
         // Initialize Leaflet Draw for Polygon Containment Queries
         const drawControl = new L.Control.Draw({
@@ -287,9 +360,15 @@
                             <span class="text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
                                 ${prop.property_type}
                             </span>
-                            <span class="text-lg font-black text-slate-900 dark:text-white">
-                                ${formatINR(prop.price)}
-                            </span>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-lg font-black text-slate-900 dark:text-white">
+                                    ${formatINR(prop.price)}
+                                </span>
+                                <button type="button" class="favorite-toggle-btn p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition"
+                                        data-id="${prop.id}" title="Save to Favorites">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                </button>
+                            </div>
                         </div>
                         <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition mb-1 line-clamp-1">
                             ${prop.title}
@@ -347,6 +426,22 @@
                     window.inspectPropertyProximity(propId);
                 });
             });
+
+            // Favorite button click listener
+            document.querySelectorAll('.favorite-toggle-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const propId = parseInt(btn.getAttribute('data-id'));
+                    if (window.toggleFavorite) {
+                        window.toggleFavorite(propId);
+                    }
+                });
+            });
+
+            // Sync favorite heart icons
+            if (window.syncCardHeartIcons) {
+                window.syncCardHeartIcons();
+            }
         }
 
         // Load and plot properties on map
@@ -431,6 +526,12 @@
                 <p class="text-slate-500 dark:text-slate-400 text-[11px]">Centroid: [${lat.toFixed(4)}, ${lng.toFixed(4)}] • PostGIS ST_DWithin</p>
             `;
 
+            activeSpatialState = {
+                mode: 'radius',
+                params: { lat: lat, lng: lng, radius_km: parseFloat(radiusKm) },
+                summary: `${parseFloat(radiusKm).toFixed(1)} km radius buffer`
+            };
+
             currentApiUrl = `/api/v1/properties/radius-search/?lat=${lat}&lng=${lng}&radius_km=${radiusKm}`;
             loadProperties(currentApiUrl);
         }
@@ -452,6 +553,12 @@
             searchCircle = null;
             clearSearchBtn.classList.add('hidden');
             searchBoundsBtn.classList.add('hidden');
+
+            activeSpatialState = {
+                mode: 'all',
+                params: {},
+                summary: 'All Metropolitan Corridors'
+            };
 
             activeFilterInfo.innerHTML = `
                 <p class="flex items-center text-slate-900 dark:text-slate-200 font-bold">
@@ -480,6 +587,12 @@
             clearSearchBtn.classList.remove('hidden');
 
             const geojson = layer.toGeoJSON();
+            activeSpatialState = {
+                mode: 'polygon',
+                params: { geojson: geojson.geometry },
+                summary: `Polygon Geofence (${geojson.geometry.coordinates[0].length} vertices)`
+            };
+
             activeFilterInfo.innerHTML = `
                 <p class="text-purple-600 dark:text-purple-400 font-bold flex items-center">
                     <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
@@ -540,6 +653,12 @@
             const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
 
             searchBoundsBtn.classList.add('hidden');
+            activeSpatialState = {
+                mode: 'viewport',
+                params: { bbox: bbox },
+                summary: 'Current Map Viewport Envelope'
+            };
+
             activeFilterInfo.innerHTML = `
                 <p class="text-emerald-600 dark:text-emerald-400 font-bold flex items-center">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
@@ -575,18 +694,24 @@
             }
         });
 
-        // BHK Filter Buttons
-        document.querySelectorAll('.bhk-filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.bhk-filter-btn').forEach(b => {
+        // BHK Filter Buttons Controller
+        function setBhkFilter(bhk) {
+            activeBhkFilter = bhk ? String(bhk) : "";
+            document.querySelectorAll('.bhk-filter-btn').forEach(b => {
+                if (b.getAttribute('data-bhk') === activeBhkFilter) {
+                    b.classList.add('bg-emerald-600', 'text-white', 'font-bold');
+                    b.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
+                } else {
                     b.classList.remove('bg-emerald-600', 'text-white', 'font-bold');
                     b.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
-                });
-                btn.classList.add('bg-emerald-600', 'text-white', 'font-bold');
-                btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
+                }
+            });
+            renderPropertyCards(currentProperties);
+        }
 
-                activeBhkFilter = btn.getAttribute('data-bhk');
-                renderPropertyCards(currentProperties);
+        document.querySelectorAll('.bhk-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setBhkFilter(btn.getAttribute('data-bhk'));
             });
         });
 
@@ -665,6 +790,11 @@
 
             if (!areaId) {
                 clearSearchBtn.classList.add('hidden');
+                activeSpatialState = {
+                    mode: 'all',
+                    params: {},
+                    summary: 'All Metropolitan Corridors'
+                };
                 activeFilterInfo.innerHTML = `
                     <p class="flex items-center text-slate-900 dark:text-slate-200 font-bold">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
@@ -682,6 +812,12 @@
             fetch(`/api/v1/areas/${areaId}/`)
                 .then(res => res.json())
                 .then(area => {
+                    activeSpatialState = {
+                        mode: 'submarket',
+                        params: { area_id: areaId, area_name: area.name },
+                        summary: `${area.name} Sub-Market Geofence`
+                    };
+
                     activeFilterInfo.innerHTML = `
                         <p class="text-purple-600 dark:text-purple-400 font-bold flex items-center">
                             <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
@@ -709,6 +845,224 @@
                 })
                 .catch(err => console.log('Error loading area details:', err));
         });
+
+        // ==========================================
+        // Save Spatial Search Modal & Application
+        // ==========================================
+        const openSaveSearchModalBtn = document.getElementById('openSaveSearchModalBtn');
+        const saveSearchModalBackdrop = document.getElementById('saveSearchModalBackdrop');
+        const closeSaveSearchModalBtn = document.getElementById('closeSaveSearchModalBtn');
+        const cancelSaveSearchBtn = document.getElementById('cancelSaveSearchBtn');
+        const saveSearchForm = document.getElementById('saveSearchForm');
+        const saveSearchTitleInput = document.getElementById('saveSearchTitleInput');
+        const saveModalOperatorBadge = document.getElementById('saveModalOperatorBadge');
+        const saveModalBhkBadge = document.getElementById('saveModalBhkBadge');
+        const saveModalSummary = document.getElementById('saveModalSummary');
+        const saveSearchAlert = document.getElementById('saveSearchAlert');
+
+        function closeSaveSearchModal() {
+            if (saveSearchModalBackdrop) saveSearchModalBackdrop.classList.add('hidden');
+            if (saveSearchAlert) saveSearchAlert.classList.add('hidden');
+        }
+
+        if (closeSaveSearchModalBtn) closeSaveSearchModalBtn.addEventListener('click', closeSaveSearchModal);
+        if (cancelSaveSearchBtn) cancelSaveSearchBtn.addEventListener('click', closeSaveSearchModal);
+        if (saveSearchModalBackdrop) {
+            saveSearchModalBackdrop.addEventListener('click', (e) => {
+                if (e.target === saveSearchModalBackdrop) closeSaveSearchModal();
+            });
+        }
+
+        if (openSaveSearchModalBtn) {
+            openSaveSearchModalBtn.addEventListener('click', () => {
+                if (!isUserAuthenticated) {
+                    if (window.openAuthModal) {
+                        window.openAuthModal();
+                        const authAlert = document.getElementById('authAlert');
+                        if (authAlert) {
+                            authAlert.textContent = 'Please sign in or use a demo account to bookmark spatial searches.';
+                            authAlert.className = 'mb-4 p-3 rounded-xl text-xs font-bold border bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30';
+                            authAlert.classList.remove('hidden');
+                        }
+                    }
+                    return;
+                }
+
+                // Populate Modal Preview
+                const bhkText = activeBhkFilter ? `${activeBhkFilter} BHK` : 'All Configurations';
+                saveModalBhkBadge.textContent = bhkText;
+                saveModalSummary.textContent = activeSpatialState.summary;
+
+                let opName = 'Global Corridor';
+                let opClass = 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20';
+
+                if (activeSpatialState.mode === 'radius') {
+                    opName = 'Geodesic Radius';
+                    opClass = 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/20';
+                } else if (activeSpatialState.mode === 'polygon') {
+                    opName = 'Polygon Geofence';
+                    opClass = 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 border-purple-200 dark:border-purple-500/20';
+                } else if (activeSpatialState.mode === 'submarket') {
+                    opName = 'Sub-Market';
+                    opClass = 'bg-teal-50 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-500/20';
+                } else if (activeSpatialState.mode === 'viewport') {
+                    opName = 'Viewport BBox';
+                    opClass = 'bg-amber-50 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20';
+                }
+
+                saveModalOperatorBadge.textContent = opName;
+                saveModalOperatorBadge.className = `font-extrabold text-[10px] px-2 py-0.5 rounded-md border ${opClass}`;
+
+                // Smart Default Title
+                let defaultTitle = "";
+                if (activeSpatialState.mode === 'radius') {
+                    defaultTitle = `${bhkText} within ${activeSpatialState.params.radius_km}km Buffer`;
+                } else if (activeSpatialState.mode === 'submarket') {
+                    defaultTitle = `${bhkText} in ${activeSpatialState.params.area_name || 'Sub-Market'}`;
+                } else if (activeSpatialState.mode === 'polygon') {
+                    defaultTitle = `${bhkText} Custom Polygon Geofence`;
+                } else {
+                    defaultTitle = `${bhkText} Metropolitan Search`;
+                }
+
+                saveSearchTitleInput.value = defaultTitle;
+                saveSearchModalBackdrop.classList.remove('hidden');
+                saveSearchTitleInput.focus();
+            });
+        }
+
+        if (saveSearchForm) {
+            saveSearchForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = saveSearchTitleInput.value.trim();
+                if (!title) return;
+
+                const payload = {
+                    title: title,
+                    criteria: {
+                        mode: activeSpatialState.mode,
+                        bhk: activeBhkFilter,
+                        params: activeSpatialState.params,
+                        summary: activeSpatialState.summary
+                    }
+                };
+
+                try {
+                    await window.apiClient('/api/v1/saved-searches/', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    // Update navbar count
+                    if (window.apiClient) {
+                        const allSearches = await window.apiClient('/api/v1/saved-searches/');
+                        const count = Array.isArray(allSearches) ? allSearches.length : (allSearches.results ? allSearches.results.length : 0);
+                        if (window.updateNavbarSavedSearchesCount) {
+                            window.updateNavbarSavedSearchesCount(count);
+                        }
+                    }
+
+                    closeSaveSearchModal();
+                    alert(`Spatial search "${title}" saved to your investor account!`);
+                } catch (err) {
+                    console.error('Failed to save search:', err);
+                    saveSearchAlert.textContent = 'Could not save search. Please try again.';
+                    saveSearchAlert.className = 'p-2.5 rounded-xl text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20';
+                    saveSearchAlert.classList.remove('hidden');
+                }
+            });
+        }
+
+        // Global Apply Saved Search Function (called from Saved Searches Drawer)
+        window.applySavedSearch = function(criteria, title) {
+            if (!criteria) return;
+
+            // 1. Restore BHK Filter
+            setBhkFilter(criteria.bhk || "");
+
+            // 2. Restore Spatial Operator
+            if (criteria.mode === 'radius' && criteria.params) {
+                const { lat, lng, radius_km } = criteria.params;
+                radiusSlider.value = radius_km;
+                radiusValue.textContent = `${parseFloat(radius_km).toFixed(1)} km`;
+                performRadiusSearch(lat, lng, radius_km);
+            } else if (criteria.mode === 'polygon' && criteria.params && criteria.params.geojson) {
+                drawnItems.clearLayers();
+                if (searchPin) map.removeLayer(searchPin);
+                if (searchCircle) map.removeLayer(searchCircle);
+                neighborhoodLayer.clearLayers();
+                neighborhoodSelect.value = "";
+                searchPin = null; searchCircle = null;
+                clearSearchBtn.classList.remove('hidden');
+
+                const layer = L.geoJSON(criteria.params.geojson, {
+                    style: { color: '#8b5cf6', fillColor: '#8b5cf6', fillOpacity: 0.15 }
+                });
+                layer.eachLayer(l => drawnItems.addLayer(l));
+                map.fitBounds(layer.getBounds(), { padding: [30, 30] });
+
+                activeFilterInfo.innerHTML = `
+                    <p class="text-purple-600 dark:text-purple-400 font-bold flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
+                        Custom Geofenced Polygon Containment
+                    </p>
+                    <p class="text-slate-500 dark:text-slate-400 text-[11px]">Restored Saved Boundary (${criteria.params.geojson.coordinates[0].length} vertices)</p>
+                `;
+
+                activeSpatialState = {
+                    mode: 'polygon',
+                    params: { geojson: criteria.params.geojson },
+                    summary: criteria.summary || 'Restored Polygon Geofence'
+                };
+
+                window.apiClient('/api/v1/properties/polygon-search/', {
+                    method: 'POST',
+                    body: JSON.stringify({ geojson: criteria.params.geojson })
+                })
+                .then(data => {
+                    propertyLayer.clearLayers();
+                    const results = data.results || data;
+                    currentProperties = Array.isArray(results) ? results : [];
+
+                    currentProperties.forEach(prop => {
+                        if (prop.lat && prop.lng) {
+                            const customIcon = L.divIcon({
+                                className: 'bg-transparent',
+                                html: `
+                                    <div class="w-8 h-8 rounded-full bg-purple-600 border-2 border-white dark:border-slate-900 text-white font-black text-[10px] flex items-center justify-center shadow-lg">
+                                        ${prop.bedrooms}B
+                                    </div>
+                                `,
+                                iconSize: [32, 32],
+                                iconAnchor: [16, 16]
+                            });
+
+                            const marker = L.marker([prop.lat, prop.lng], { icon: customIcon }).addTo(propertyLayer);
+                            marker.propertyId = prop.id;
+                            marker.bindPopup(`
+                                <div class="font-sans text-xs min-w-[210px] p-1">
+                                    <span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 font-bold uppercase text-[9px]">${prop.property_type}</span>
+                                    <h4 class="font-bold text-sm text-slate-900 mt-1 mb-0.5">${prop.title}</h4>
+                                    <p class="font-black text-purple-700 text-sm mb-1">${formatINR(prop.price)}</p>
+                                    <p class="text-slate-600 font-medium">${prop.bedrooms} BHK • ${prop.area_sqft} sqft</p>
+                                </div>
+                            `);
+                        }
+                    });
+
+                    renderPropertyCards(currentProperties);
+                })
+                .catch(err => console.log('Error in polygon search:', err));
+            } else if (criteria.mode === 'submarket' && criteria.params && criteria.params.area_id) {
+                neighborhoodSelect.value = criteria.params.area_id;
+                neighborhoodSelect.dispatchEvent(new Event('change'));
+            } else if (criteria.mode === 'viewport' && criteria.params && criteria.params.bbox) {
+                currentApiUrl = `/api/v1/properties/bbox-search/?bbox=${criteria.params.bbox}`;
+                loadProperties(currentApiUrl);
+            } else {
+                clearSearchBtn.click();
+            }
+        };
 
         // Initial Load
         loadProperties('/api/v1/properties/');

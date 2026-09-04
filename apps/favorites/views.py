@@ -37,3 +37,11 @@ class FavoriteDeleteView(APIView):
         if deleted:
             return Response({"message": "Favorite removed"}, status=status.HTTP_200_OK)
         return Response({"error": "Favorite not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class FavoriteIdsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        fav_ids = list(Favorite.objects.filter(user=request.user).values_list('property_id', flat=True))
+        return Response({"favorite_ids": fav_ids})

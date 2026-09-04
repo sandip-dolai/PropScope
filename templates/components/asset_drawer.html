@@ -147,11 +147,16 @@
 
         // Open Drawer Controller
         window.openAssetDrawer = function(propertyId, propertyData = null) {
+            window.activeDrawerPropertyId = propertyId;
             assetDrawerBackdrop.classList.remove('hidden');
             assetDrawer.classList.remove('translate-x-full');
 
             if (propertyData) {
                 populatePropertyMetadata(propertyData);
+            }
+
+            if (window.syncCardHeartIcons) {
+                window.syncCardHeartIcons();
             }
 
             // Load KNN Proximity Data

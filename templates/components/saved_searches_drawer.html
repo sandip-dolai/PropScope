@@ -1,0 +1,208 @@
+<!-- Slide-Out Buyer Saved Searches & Geofence Alerts Drawer -->
+<div id="savedSearchesDrawerBackdrop" class="fixed inset-0 z-[2500] bg-slate-950/40 backdrop-blur-[2px] hidden transition-opacity lg:bg-transparent lg:pointer-events-none"></div>
+
+<aside id="savedSearchesDrawer"
+       class="fixed top-0 bottom-0 right-0 z-[2501] w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col pointer-events-auto">
+    
+    <!-- Drawer Header -->
+    <div class="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+        <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Saved Geofences & Searches</h3>
+                    <span id="savedSearchesDrawerBadge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
+                        0
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Bookmarked spatial parameters & boundaries</p>
+            </div>
+        </div>
+
+        <button id="closeSavedSearchesDrawerBtn" type="button" title="Close Drawer"
+                class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+
+    <!-- Drawer Content / List -->
+    <div id="savedSearchesListContainer" class="flex-grow overflow-y-auto p-4 space-y-3">
+        <div class="py-12 text-center text-slate-400 dark:text-slate-500">
+            <div class="inline-block w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p class="text-xs font-semibold">Loading saved spatial searches...</p>
+        </div>
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="p-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between text-xs">
+        <span class="text-[11px] text-slate-500 dark:text-slate-400">
+            Synced with user geofence preferences
+        </span>
+        <button id="closeSavedSearchesDrawerFooterBtn" type="button"
+                class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold transition">
+            Close
+        </button>
+    </div>
+
+</aside>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedSearchesDrawer = document.getElementById('savedSearchesDrawer');
+        const savedSearchesDrawerBackdrop = document.getElementById('savedSearchesDrawerBackdrop');
+        const closeSavedSearchesDrawerBtn = document.getElementById('closeSavedSearchesDrawerBtn');
+        const closeSavedSearchesDrawerFooterBtn = document.getElementById('closeSavedSearchesDrawerFooterBtn');
+        const navOpenSavedSearchesBtn = document.getElementById('navOpenSavedSearchesBtn');
+        const savedSearchesListContainer = document.getElementById('savedSearchesListContainer');
+        const savedSearchesDrawerBadge = document.getElementById('savedSearchesDrawerBadge');
+
+        const isUserAuthenticated = {% if request.user.is_authenticated %}true{% else %}false{% endif %};
+
+        // Open Saved Searches Drawer
+        window.openSavedSearchesDrawer = function() {
+            if (savedSearchesDrawerBackdrop) savedSearchesDrawerBackdrop.classList.remove('hidden');
+            if (savedSearchesDrawer) savedSearchesDrawer.classList.remove('translate-x-full');
+            loadSavedSearchesList();
+        };
+
+        // Close Saved Searches Drawer
+        window.closeSavedSearchesDrawer = function() {
+            if (savedSearchesDrawerBackdrop) savedSearchesDrawerBackdrop.classList.add('hidden');
+            if (savedSearchesDrawer) savedSearchesDrawer.classList.add('translate-x-full');
+        };
+
+        if (closeSavedSearchesDrawerBtn) closeSavedSearchesDrawerBtn.addEventListener('click', window.closeSavedSearchesDrawer);
+        if (closeSavedSearchesDrawerFooterBtn) closeSavedSearchesDrawerFooterBtn.addEventListener('click', window.closeSavedSearchesDrawer);
+        if (savedSearchesDrawerBackdrop) savedSearchesDrawerBackdrop.addEventListener('click', window.closeSavedSearchesDrawer);
+        if (navOpenSavedSearchesBtn) navOpenSavedSearchesBtn.addEventListener('click', window.openSavedSearchesDrawer);
+
+        // Update Navbar badge
+        window.updateNavbarSavedSearchesCount = function(count) {
+            if (savedSearchesDrawerBadge) savedSearchesDrawerBadge.textContent = count;
+            const navBadge = document.getElementById('navSavedSearchesCount');
+            if (navBadge) navBadge.textContent = count;
+        };
+
+        // Initial badge fetch on load
+        if (isUserAuthenticated) {
+            window.apiClient('/api/v1/saved-searches/')
+                .then(data => {
+                    const list = Array.isArray(data) ? data : (data.results || []);
+                    window.updateNavbarSavedSearchesCount(list.length);
+                })
+                .catch(err => console.warn('Could not load saved searches count:', err));
+        }
+
+        // Delete Saved Search
+        window.deleteSavedSearch = async function(searchId) {
+            if (!confirm('Are you sure you want to delete this saved search?')) return;
+            try {
+                await window.apiClient(`/api/v1/saved-searches/${searchId}/`, {
+                    method: 'DELETE'
+                });
+                loadSavedSearchesList();
+            } catch (err) {
+                console.error('Delete search error:', err);
+                alert('Failed to delete saved search.');
+            }
+        };
+
+        // Load Full List in Drawer
+        async function loadSavedSearchesList() {
+            try {
+                const data = await window.apiClient('/api/v1/saved-searches/');
+                const items = Array.isArray(data) ? data : (data.results || []);
+                window.updateNavbarSavedSearchesCount(items.length);
+
+                if (!items || items.length === 0) {
+                    savedSearchesListContainer.innerHTML = `
+                        <div class="py-16 text-center text-slate-400 dark:text-slate-500 px-4">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">No Saved Searches Yet</h4>
+                            <p class="text-xs max-w-xs mx-auto">Click the map, draw a custom geofence polygon, or pick a sub-market, then click <strong>"Save This Search"</strong> in the toolbar.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                savedSearchesListContainer.innerHTML = items.map(item => {
+                    const criteria = item.criteria || {};
+                    const mode = criteria.mode || 'general';
+                    const bhk = criteria.bhk ? `${criteria.bhk} BHK` : 'All BHKs';
+                    const summary = criteria.summary || 'Custom spatial boundary';
+                    const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+                    let badgeColor = 'bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20';
+                    let badgeLabel = 'Radius Buffer';
+
+                    if (mode === 'polygon') {
+                        badgeColor = 'bg-purple-50 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/20';
+                        badgeLabel = 'Geofence Polygon';
+                    } else if (mode === 'submarket') {
+                        badgeColor = 'bg-teal-50 dark:bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-500/20';
+                        badgeLabel = 'Sub-Market';
+                    } else if (mode === 'viewport') {
+                        badgeColor = 'bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20';
+                        badgeLabel = 'Bounding Envelope';
+                    }
+
+                    // JSON-escaped criteria for inline call
+                    const criteriaJson = encodeURIComponent(JSON.stringify(criteria));
+
+                    return `
+                        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition space-y-3">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="flex items-center space-x-2 mb-1">
+                                        <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-md border ${badgeColor}">
+                                            ${badgeLabel}
+                                        </span>
+                                        <span class="text-[10px] font-bold text-slate-400">• ${bhk}</span>
+                                    </div>
+                                    <h4 class="text-xs font-extrabold text-slate-900 dark:text-white truncate">${item.title}</h4>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${summary}</p>
+                                </div>
+                                <button onclick="window.deleteSavedSearch(${item.id})" title="Delete Saved Search"
+                                        class="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/15 transition flex-shrink-0">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </div>
+
+                            <div class="pt-2.5 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs">
+                                <span class="text-[10px] text-slate-400">Saved: ${dateStr}</span>
+                                <button onclick="window.applySavedSearchFromDrawer('${criteriaJson}', '${encodeURIComponent(item.title)}')"
+                                        class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition shadow-sm flex items-center space-x-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span>Apply To Map</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                savedSearchesListContainer.innerHTML = `
+                    <div class="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs text-center">
+                        Could not load saved searches. Please try again.
+                    </div>
+                `;
+            }
+        }
+
+        window.applySavedSearchFromDrawer = function(encodedCriteria, encodedTitle) {
+            try {
+                const criteria = JSON.parse(decodeURIComponent(encodedCriteria));
+                const title = decodeURIComponent(encodedTitle);
+                window.closeSavedSearchesDrawer();
+                if (window.applySavedSearch) {
+                    window.applySavedSearch(criteria, title);
+                }
+            } catch (err) {
+                console.error('Error applying saved search:', err);
+            }
+        };
+    });
+</script>

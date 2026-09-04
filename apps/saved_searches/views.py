@@ -17,6 +17,7 @@ class SavedSearchSerializer(serializers.ModelSerializer):
 class SavedSearchListCreateView(generics.ListCreateAPIView):
     serializer_class = SavedSearchSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         return SavedSearch.objects.filter(user=self.request.user)

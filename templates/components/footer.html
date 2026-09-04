@@ -1,50 +1,145 @@
-<!-- Enterprise Footer & System Disclosures -->
-<footer class="border-t border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-950 py-10 transition-colors mt-auto">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-xs">
-            <div class="space-y-2">
-                <div class="flex items-center space-x-2">
-                    <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white font-black flex items-center justify-center text-xs">PS</span>
-                    <span class="font-extrabold text-sm text-slate-900 dark:text-white">PropScope Engine</span>
+<!-- Enterprise Institutional Footer & System Navigation -->
+<footer class="border-t border-slate-200/90 dark:border-slate-800/80 bg-white/95 dark:bg-slate-950 py-12 transition-colors mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        
+        <!-- 4-Column Directory Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-xs">
+            
+            <!-- Column 1: Brand & Mission -->
+            <div class="space-y-3 sm:col-span-2 lg:col-span-1">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center font-black text-white text-xs shadow-md shadow-emerald-500/20">
+                        PS
+                    </div>
+                    <span class="font-extrabold text-base text-slate-900 dark:text-white tracking-tight">PropScope Platform</span>
                 </div>
-                <p class="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
-                    Enterprise geospatial property platform performing geodetic distance calculations, PostGIS spatial indexing, and multi-tier infrastructure connectivity analysis.
+                <p class="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">
+                    Enterprise real estate intelligence platform powered by deterministic PostGIS spatial queries, geodetic WGS-84 buffers, and West Bengal RERA regulatory compliance auditing.
                 </p>
+                <div class="flex items-center space-x-2 pt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Kolkata — Barasat Metro Corridor (SRID 4326)</span>
+                </div>
             </div>
+
+            <!-- Column 2: Platform Workstations -->
             <div>
-                <h5 class="font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 text-[10px]">Geospatial Architecture</h5>
-                <ul class="space-y-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
-                    <li>PostgreSQL 16 + PostGIS 3.4</li>
-                    <li>WGS-84 (SRID 4326) Geodetic Coordinates</li>
-                    <li>GiST 2D Spatial Indexing</li>
-                    <li>KNN Amenity Proximity Engine</li>
+                <h5 class="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-3 text-[11px] flex items-center space-x-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span>Workstations</span>
+                </h5>
+                <ul class="space-y-2 text-slate-600 dark:text-slate-400 text-xs font-semibold">
+                    <li>
+                        <a href="{% url 'home' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
+                            <span>Market Discovery Map</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'dashboard' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
+                            <span>Portfolio Analytics</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'property_inventory' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
+                            <span>Inventory Data Grid</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'property_leads' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
+                            <span>Buyer Leads CRM</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'property_create' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
+                            <span>Add Geospatial Listing</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin_console' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
+                            <span>Admin Moderation Console</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
+
+            <!-- Column 3: Portfolios & Showcase -->
             <div>
-                <h5 class="font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 text-[10px]">Application Stack</h5>
-                <ul class="space-y-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
-                    <li>Django 5.1 & Django REST Framework</li>
-                    <li>Celery Asynchronous Task Workers</li>
-                    <li>Redis 7 In-Memory State Cache</li>
-                    <li>Leaflet.js + CartoDB Vector Maps</li>
+                <h5 class="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-3 text-[11px] flex items-center space-x-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                    <span>Accreditation & Portfolios</span>
+                </h5>
+                <ul class="space-y-2 text-slate-600 dark:text-slate-400 text-xs font-semibold">
+                    <li>
+                        <a href="/agents/2/" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
+                            <span>Agent Priya Mukherjee (WB-RERA)</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/api/v1/areas/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
+                            <span>Submarket Boundary GeoJSON</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/api/v1/amenities/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center space-x-1.5">
+                            <span>KNN Transit Nodes & Points</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/" target="_blank" class="hover:text-purple-600 dark:hover:text-purple-400 transition flex items-center space-x-1.5">
+                            <span>Django Superuser Console</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
+
+            <!-- Column 4: Spatial Developer Interfaces -->
             <div>
-                <h5 class="font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 text-[10px]">Developer Interfaces</h5>
-                <ul class="space-y-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
-                    <li><a href="/api/docs/swagger/" target="_blank" class="hover:text-emerald-500 transition">OpenAPI 3.0 Interactive Swagger</a></li>
-                    <li><a href="/api/docs/redoc/" target="_blank" class="hover:text-emerald-500 transition">ReDoc Reference Documentation</a></li>
-                    <li><a href="/api/v1/properties/" target="_blank" class="hover:text-emerald-500 transition">Properties REST API</a></li>
-                    <li><a href="/api/v1/areas/" target="_blank" class="hover:text-emerald-500 transition">Sub-Market Polygon API</a></li>
+                <h5 class="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-3 text-[11px] flex items-center space-x-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                    <span>Developer Interfaces</span>
+                </h5>
+                <ul class="space-y-2 text-slate-600 dark:text-slate-400 text-xs font-semibold">
+                    <li>
+                        <a href="/api/docs/swagger/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center justify-between">
+                            <span>OpenAPI 3.0 Interactive Swagger</span>
+                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/api/docs/redoc/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition flex items-center justify-between">
+                            <span>ReDoc API Reference</span>
+                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/api/v1/properties/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+                            <span>Active Properties REST Stream</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/api/v1/properties/admin/moderation/stats/" target="_blank" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+                            <span>Platform Governance Telemetry API</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
+
         </div>
-        <div class="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-slate-500 dark:text-slate-500 text-[11px]">
-            <p>PropScope &copy; 2026. All spatial indexes and geodetic algorithms compiled and verified.</p>
-            <p class="mt-2 sm:mt-0 flex items-center space-x-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>System Status: Fully Operational</span>
+
+        <!-- System Status Bar -->
+        <div class="pt-6 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500 dark:text-slate-400 text-xs">
+            <p>
+                PropScope &copy; 2026. All spatial indexes (PostGIS GiST) and geodetic algorithms compiled and verified.
             </p>
+            <div class="flex items-center space-x-3 text-[11px] font-semibold">
+                <span class="flex items-center space-x-1.5 text-emerald-600 dark:text-emerald-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span>System Status: 100% Operational</span>
+                </span>
+                <span class="text-slate-300 dark:text-slate-700">•</span>
+                <span>PostgreSQL 16 + PostGIS 3.4</span>
+            </div>
         </div>
+
     </div>
 </footer>

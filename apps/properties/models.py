@@ -14,6 +14,7 @@ class PropertyType(models.TextChoices):
 
 class PropertyStatus(models.TextChoices):
     ACTIVE = "ACTIVE", "Active"
+    UNDER_OFFER = "UNDER_OFFER", "Under Offer"
     SOLD = "SOLD", "Sold"
     RENTED = "RENTED", "Rented"
     INACTIVE = "INACTIVE", "Inactive"

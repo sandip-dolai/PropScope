@@ -10,8 +10,8 @@ class PropertyImageSerializer(serializers.ModelSerializer):
 
 
 class PropertySerializer(serializers.ModelSerializer):
-    latitude = serializers.FloatField(write_only=True)
-    longitude = serializers.FloatField(write_only=True)
+    latitude = serializers.FloatField(write_only=True, required=False)
+    longitude = serializers.FloatField(write_only=True, required=False)
     images = PropertyImageSerializer(many=True, read_only=True)
     agent_name = serializers.ReadOnlyField(source='agent.get_full_name')
     price_per_sqft = serializers.ReadOnlyField()
@@ -29,8 +29,10 @@ class PropertySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'agent', 'agent_name', 'created_at', 'updated_at']
 
     def create(self, validated_data):
-        lat = validated_data.pop('latitude')
-        lng = validated_data.pop('longitude')
+        lat = validated_data.pop('latitude', None)
+        lng = validated_data.pop('longitude', None)
+        if lat is None or lng is None:
+            raise serializers.ValidationError({"location": "Latitude and longitude are required to create a property."})
         validated_data['location'] = Point(lng, lat, srid=4326)
         validated_data['agent'] = self.context['request'].user
         return super().create(validated_data)

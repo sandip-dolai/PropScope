@@ -1,6 +1,7 @@
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Q
 from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
 from django.contrib.gis.measure import D
 from .models import Property, PropertyStatus
@@ -158,4 +159,86 @@ class PropertyNearestAmenitiesView(APIView):
         from apps.amenities.services import AmenitySpatialService
         data = AmenitySpatialService.get_nearest_amenities_for_property(property_obj)
         return Response(data)
+
+
+class AgentInventoryAPIView(APIView):
+    """
+    High-density asset inventory management API for licensed agents and platform administrators.
+    - Agents only access listings they represent.
+    - Admins access platform-wide inventory.
+    - Supports search (title, address), status filtering, bedrooms, property_type, and ordering.
+    - Returns aggregated status metrics across portfolio (total, active, under_offer, sold, rented, inactive).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if not (user.is_agent or user.is_platform_admin):
+            return Response(
+                {"error": "Only licensed agents and platform administrators may access inventory management."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if user.is_platform_admin:
+            base_qs = Property.objects.all().select_related('agent')
+        else:
+            base_qs = Property.objects.filter(agent=user).select_related('agent')
+
+        status_counts = {
+            "total": base_qs.count(),
+            "active": base_qs.filter(status=PropertyStatus.ACTIVE).count(),
+            "under_offer": base_qs.filter(status=PropertyStatus.UNDER_OFFER).count(),
+            "sold": base_qs.filter(status=PropertyStatus.SOLD).count(),
+            "rented": base_qs.filter(status=PropertyStatus.RENTED).count(),
+            "inactive": base_qs.filter(status=PropertyStatus.INACTIVE).count(),
+        }
+
+        qs = base_qs
+
+        search_query = request.query_params.get('search', '').strip()
+        if search_query:
+            qs = qs.filter(
+                Q(title__icontains=search_query) |
+                Q(address__icontains=search_query)
+            )
+
+        status_filter = request.query_params.get('status', '').strip().upper()
+        if status_filter and status_filter != 'ALL':
+            qs = qs.filter(status=status_filter)
+
+        bedrooms = request.query_params.get('bedrooms')
+        if bedrooms:
+            try:
+                bhk_val = int(bedrooms)
+                if bhk_val >= 4:
+                    qs = qs.filter(bedrooms__gte=4)
+                else:
+                    qs = qs.filter(bedrooms=bhk_val)
+            except ValueError:
+                pass
+
+        prop_type = request.query_params.get('property_type', '').strip().upper()
+        if prop_type and prop_type != 'ALL':
+            qs = qs.filter(property_type=prop_type)
+
+        ordering = request.query_params.get('ordering', '-created_at')
+        allowed_orderings = {
+            '-created_at', 'created_at',
+            'price', '-price',
+            'area_sqft', '-area_sqft',
+            'bedrooms', '-bedrooms',
+            'title', '-title'
+        }
+        if ordering in allowed_orderings:
+            qs = qs.order_by(ordering)
+        else:
+            qs = qs.order_by('-created_at')
+
+        serializer = PropertySerializer(qs, many=True)
+        return Response({
+            "status_counts": status_counts,
+            "count": len(qs),
+            "results": serializer.data
+        })
+
 

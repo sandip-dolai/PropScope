@@ -24,10 +24,16 @@ class PropertyCreateView(TemplateView):
     template_name = 'dashboard/property_create.html'
 
 
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class PropertyInventoryView(TemplateView):
+    template_name = 'dashboard/inventory.html'
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', HomeView.as_view(), name='home'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('dashboard/inventory/', PropertyInventoryView.as_view(), name='property_inventory'),
     path('dashboard/create/', PropertyCreateView.as_view(), name='property_create'),
     
     # API Schema and Documentation

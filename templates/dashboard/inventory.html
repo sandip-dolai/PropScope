@@ -1,0 +1,705 @@
+{% extends 'layouts/dashboard.html' %}
+
+{% block title %}Asset Inventory Management — PropScope Command Center{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- Page Header & Breadcrumbs -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div>
+            <div class="flex items-center space-x-2 text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                <a href="{% url 'dashboard' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">&larr; Command Center</a>
+                <span>/</span>
+                <span class="text-slate-800 dark:text-slate-200">Asset Inventory</span>
+            </div>
+            <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                <span>Asset Inventory Management</span>
+                <span id="headerTotalBadge" class="text-xs font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    Loading...
+                </span>
+            </h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                High-density real-time portfolio management. Search, filter, update transaction lifecycle status, and adjust pricing instantly.
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-3 self-start sm:self-auto">
+            <a href="{% url 'property_create' %}" 
+               class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-extrabold shadow-md shadow-emerald-500/20 transition-all transform hover:-translate-y-0.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                <span>Add New Listing</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Live Toast Notification Banner -->
+    <div id="inventoryToast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-2xl flex items-center space-x-3">
+        <div id="toastIcon" class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
+            ✓
+        </div>
+        <div class="flex-grow">
+            <h4 id="toastTitle" class="text-xs font-extrabold text-slate-900 dark:text-white">Listing Updated</h4>
+            <p id="toastMessage" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Changes persisted successfully.</p>
+        </div>
+        <button onclick="hideToast()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 text-xs">✕</button>
+    </div>
+
+    <!-- Status Lifecycle Filter Tabs (Top Metrics Bar) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <button type="button" data-status-filter="ALL" class="status-tab-btn active px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border-2 border-emerald-500 shadow-sm text-left transition hover:border-emerald-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">All Units</span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountTotal" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-slate-400">100%</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="ACTIVE" class="status-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-emerald-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountActive" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Live</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="UNDER_OFFER" class="status-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-amber-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Under Offer
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountUnderOffer" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">Pending</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="SOLD" class="status-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-indigo-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Sold
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountSold" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">Closed</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="RENTED" class="status-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-cyan-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span> Rented
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountRented" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-cyan-600 dark:text-cyan-400">Leased</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="INACTIVE" class="status-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-rose-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Inactive
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountInactive" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-slate-400">Archived</span>
+            </div>
+        </button>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+            
+            <!-- Live Search Input (5 Cols) -->
+            <div class="lg:col-span-5 relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <input type="text" id="inventorySearchInput" placeholder="Instant search by title, address, locality..."
+                       class="w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                <button id="clearSearchBtn" type="button" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Bedroom / BHK Filter (2 Cols) -->
+            <div class="lg:col-span-2">
+                <select id="inventoryBhkFilter" class="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="">All Configurations</option>
+                    <option value="1">1 BHK</option>
+                    <option value="2">2 BHK</option>
+                    <option value="3">3 BHK</option>
+                    <option value="4">4+ BHK</option>
+                </select>
+            </div>
+
+            <!-- Property Type Filter (2 Cols) -->
+            <div class="lg:col-span-2">
+                <select id="inventoryTypeFilter" class="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="">All Asset Types</option>
+                    <option value="APARTMENT">Apartment</option>
+                    <option value="VILLA">Villa</option>
+                    <option value="HOUSE">Independent House</option>
+                    <option value="PLOT">Plot / Land</option>
+                    <option value="COMMERCIAL">Commercial</option>
+                    <option value="OFFICE">Office Space</option>
+                </select>
+            </div>
+
+            <!-- Sorting Select (2 Cols) -->
+            <div class="lg:col-span-2">
+                <select id="inventorySortSelect" class="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="-created_at">Newest First</option>
+                    <option value="created_at">Oldest First</option>
+                    <option value="-price">Price: High to Low</option>
+                    <option value="price">Price: Low to High</option>
+                    <option value="-area_sqft">Area: Largest First</option>
+                    <option value="area_sqft">Area: Smallest First</option>
+                </select>
+            </div>
+
+            <!-- Reset Filters Button (1 Col) -->
+            <div class="lg:col-span-1 flex justify-end">
+                <button id="resetFiltersBtn" type="button" title="Reset all filters"
+                        class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold transition flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- High-Density Inventory Table Card -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm transition-colors">
+        
+        <!-- Table Control Header -->
+        <div class="px-5 py-4 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-900/60">
+            <div class="flex items-center space-x-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Active Workstation Feed:</span>
+                <span id="tableResultsCount" class="font-mono text-emerald-600 dark:text-emerald-400 font-extrabold">0 matching listings</span>
+            </div>
+
+            <div class="flex items-center space-x-2 text-[11px] text-slate-400">
+                <span>💡 Tip: Click status badges or prices directly to update inline!</span>
+            </div>
+        </div>
+
+        <!-- Table Viewport Container -->
+        <div class="overflow-x-auto min-h-[350px] relative">
+            
+            <!-- Loading Skeleton -->
+            <div id="tableLoadingSkeleton" class="p-6 space-y-4">
+                <div class="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse"></div>
+                <div class="h-12 bg-slate-50 dark:bg-slate-800/60 rounded-xl animate-pulse"></div>
+                <div class="h-12 bg-slate-50 dark:bg-slate-800/60 rounded-xl animate-pulse"></div>
+                <div class="h-12 bg-slate-50 dark:bg-slate-800/60 rounded-xl animate-pulse"></div>
+                <div class="h-12 bg-slate-50 dark:bg-slate-800/60 rounded-xl animate-pulse"></div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="tableEmptyState" class="hidden py-16 px-4 text-center space-y-3">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-2xl">
+                    🏢
+                </div>
+                <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">No properties found</h3>
+                <p class="text-xs text-slate-400 max-w-sm mx-auto">
+                    There are no listings matching your current search criteria or status filter. Try clearing filters or creating a new listing.
+                </p>
+                <button onclick="resetAllFilters()" class="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs hover:bg-emerald-500/20 transition">
+                    Reset Filters
+                </button>
+            </div>
+
+            <!-- Data Table -->
+            <table id="inventoryTable" class="w-full text-left border-collapse text-xs hidden">
+                <thead>
+                    <tr class="border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                        <th class="py-3.5 px-4">Asset Details</th>
+                        <th class="py-3.5 px-4">Configuration</th>
+                        <th class="py-3.5 px-4">Valuation & Rate</th>
+                        <th class="py-3.5 px-4">Lifecycle Status</th>
+                        <th class="py-3.5 px-4">Georeference</th>
+                        <th class="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                    <!-- Rows rendered dynamically via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Inline Price Update Modal -->
+<div id="priceEditModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+            <div>
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Quick Price Adjustment</h3>
+                <p id="priceModalTitle" class="text-[11px] text-slate-400 truncate max-w-xs mt-0.5">Asset</p>
+            </div>
+            <button onclick="closePriceModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm">✕</button>
+        </div>
+
+        <div class="space-y-3">
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                New Price (₹ INR)
+            </label>
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold">₹</span>
+                <input type="number" id="newPriceInput" step="10000" min="100000"
+                       class="w-full pl-8 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-extrabold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-bold">Formatted:</span>
+                <span id="priceModalFormatted" class="font-extrabold text-emerald-600 dark:text-emerald-400">₹ 0.00</span>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2">
+            <button type="button" onclick="closePriceModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold transition">
+                Cancel
+            </button>
+            <button type="button" id="savePriceBtn" onclick="submitPriceUpdate()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-500/20 transition">
+                Save Price
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // State
+    let activeFilterStatus = 'ALL';
+    let currentSearchTerm = '';
+    let currentBhk = '';
+    let currentPropertyType = '';
+    let currentOrdering = '-created_at';
+    let inventoryData = [];
+    let searchDebounceTimer = null;
+    let editingPropertyId = null;
+
+    // DOM Elements
+    const searchInput = document.getElementById('inventorySearchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const bhkFilter = document.getElementById('inventoryBhkFilter');
+    const typeFilter = document.getElementById('inventoryTypeFilter');
+    const sortSelect = document.getElementById('inventorySortSelect');
+    const resetBtn = document.getElementById('resetFiltersBtn');
+    const tableSkeleton = document.getElementById('tableLoadingSkeleton');
+    const tableEmpty = document.getElementById('tableEmptyState');
+    const tableEl = document.getElementById('inventoryTable');
+    const tableBody = document.getElementById('inventoryTableBody');
+    const resultsCountEl = document.getElementById('tableResultsCount');
+    const headerTotalBadge = document.getElementById('headerTotalBadge');
+    const statusTabBtns = document.querySelectorAll('.status-tab-btn');
+
+    // Number & Currency Formatters
+    function formatCurrency(val) {
+        const num = parseFloat(val);
+        if (isNaN(num)) return '₹0';
+        if (num >= 10000000) {
+            return `₹ ${(num / 10000000).toFixed(2)} Cr`;
+        } else if (num >= 100000) {
+            return `₹ ${(num / 100000).toFixed(2)} L`;
+        }
+        return `₹ ${num.toLocaleString('en-IN')}`;
+    }
+
+    // Toast Notification Utility
+    window.showToast = function(title, message, isError = false) {
+        const toast = document.getElementById('inventoryToast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIcon = document.getElementById('toastIcon');
+
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+
+        if (isError) {
+            toastIcon.className = 'w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold text-sm shrink-0';
+            toastIcon.textContent = '✕';
+        } else {
+            toastIcon.className = 'w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0';
+            toastIcon.textContent = '✓';
+        }
+
+        toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+        setTimeout(window.hideToast, 4000);
+    };
+
+    window.hideToast = function() {
+        const toast = document.getElementById('inventoryToast');
+        toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+    };
+
+    // Status Badge Styling Helper
+    function getStatusBadgeClasses(status) {
+        switch(status) {
+            case 'ACTIVE':
+                return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+            case 'UNDER_OFFER':
+                return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
+            case 'SOLD':
+                return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30';
+            case 'RENTED':
+                return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30';
+            case 'INACTIVE':
+                return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+            case 'PENDING_APPROVAL':
+                return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30';
+            default:
+                return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30';
+        }
+    }
+
+    // Fetch Inventory Data from API
+    async function loadInventory() {
+        tableSkeleton.classList.remove('hidden');
+        tableEmpty.classList.add('hidden');
+        tableEl.classList.add('hidden');
+
+        try {
+            const params = new URLSearchParams();
+            if (activeFilterStatus && activeFilterStatus !== 'ALL') {
+                params.set('status', activeFilterStatus);
+            }
+            if (currentSearchTerm) {
+                params.set('search', currentSearchTerm);
+            }
+            if (currentBhk) {
+                params.set('bedrooms', currentBhk);
+            }
+            if (currentPropertyType) {
+                params.set('property_type', currentPropertyType);
+            }
+            if (currentOrdering) {
+                params.set('ordering', currentOrdering);
+            }
+
+            const data = await window.apiClient(`/api/v1/properties/inventory/?${params.toString()}`);
+            inventoryData = data.results || [];
+
+            // Update Status Tabs Counts
+            if (data.status_counts) {
+                const sc = data.status_counts;
+                document.getElementById('statCountTotal').textContent = sc.total || 0;
+                document.getElementById('statCountActive').textContent = sc.active || 0;
+                document.getElementById('statCountUnderOffer').textContent = sc.under_offer || 0;
+                document.getElementById('statCountSold').textContent = sc.sold || 0;
+                document.getElementById('statCountRented').textContent = sc.rented || 0;
+                document.getElementById('statCountInactive').textContent = sc.inactive || 0;
+                headerTotalBadge.textContent = `${sc.total || 0} Managed Listings`;
+            }
+
+            resultsCountEl.textContent = `${data.count || 0} matching listings`;
+
+            renderTable(inventoryData);
+        } catch (err) {
+            console.error('Failed to load inventory:', err);
+            window.showToast('Fetch Error', err.message || 'Unable to load asset inventory.', true);
+        } finally {
+            tableSkeleton.classList.add('hidden');
+        }
+    }
+
+    // Render Table Rows
+    function renderTable(properties) {
+        if (!properties || properties.length === 0) {
+            tableEmpty.classList.remove('hidden');
+            tableEl.classList.add('hidden');
+            return;
+        }
+
+        tableEmpty.classList.add('hidden');
+        tableEl.classList.remove('hidden');
+        tableBody.innerHTML = '';
+
+        properties.forEach(prop => {
+            const tr = document.createElement('tr');
+            tr.id = `property-row-${prop.id}`;
+            tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group';
+
+            const priceFormatted = formatCurrency(prop.price);
+            const rateFormatted = prop.price_per_sqft ? `₹ ${Math.round(prop.price_per_sqft).toLocaleString('en-IN')} / sqft` : 'N/A';
+            const badgeClasses = getStatusBadgeClasses(prop.status);
+
+            tr.innerHTML = `
+                <!-- Asset Column -->
+                <td class="py-4 px-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-400 shrink-0 text-sm overflow-hidden border border-slate-200 dark:border-slate-800">
+                            ${prop.images && prop.images.length > 0 ? `<img src="${prop.images[0].image}" alt="" class="w-full h-full object-cover" />` : '🏠'}
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-extrabold text-slate-900 dark:text-white truncate max-w-xs block" title="${prop.title}">
+                                    ${prop.title}
+                                </span>
+                                <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                    ${prop.property_type}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 truncate max-w-xs mt-0.5" title="${prop.address}">
+                                📍 ${prop.address}
+                            </p>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Specs Column -->
+                <td class="py-4 px-4 whitespace-nowrap">
+                    <div class="space-y-0.5">
+                        <div class="font-extrabold text-slate-800 dark:text-slate-200">
+                            ${prop.bedrooms} BHK &bull; ${prop.bathrooms} Bath
+                        </div>
+                        <div class="text-[11px] text-slate-400">
+                            ${parseFloat(prop.area_sqft).toLocaleString('en-IN')} sq.ft
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Valuation Column -->
+                <td class="py-4 px-4 whitespace-nowrap">
+                    <div class="space-y-0.5">
+                        <div class="flex items-center space-x-1.5">
+                            <span class="font-black text-slate-900 dark:text-white" id="price-display-${prop.id}">
+                                ${priceFormatted}
+                            </span>
+                            <button type="button" onclick="openPriceModal(${prop.id}, '${escapeHtml(prop.title)}', ${prop.price})" 
+                                    title="Edit Price"
+                                    class="text-slate-400 hover:text-emerald-500 transition p-0.5 rounded">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </button>
+                        </div>
+                        <div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold" id="rate-display-${prop.id}">
+                            ${rateFormatted}
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Status Selector Column -->
+                <td class="py-4 px-4 whitespace-nowrap">
+                    <div class="relative inline-block">
+                        <select onchange="handleStatusChange(${prop.id}, this.value)" 
+                                id="status-select-${prop.id}"
+                                class="text-[11px] font-extrabold uppercase tracking-wide py-1 px-2.5 rounded-xl border ${badgeClasses} bg-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                            <option value="ACTIVE" ${prop.status === 'ACTIVE' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Active</option>
+                            <option value="UNDER_OFFER" ${prop.status === 'UNDER_OFFER' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Under Offer</option>
+                            <option value="SOLD" ${prop.status === 'SOLD' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Sold</option>
+                            <option value="RENTED" ${prop.status === 'RENTED' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Rented</option>
+                            <option value="INACTIVE" ${prop.status === 'INACTIVE' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Inactive</option>
+                        </select>
+                    </div>
+                </td>
+
+                <!-- PostGIS Georeference Column -->
+                <td class="py-4 px-4 whitespace-nowrap">
+                    <a href="/?lat=${prop.lat || 22.5850}&lng=${prop.lng || 88.4300}&highlight=${prop.id}" 
+                       target="_blank"
+                       title="Inspect on Metropolitan Discovery Map"
+                       class="inline-flex items-center space-x-1 font-mono text-[10px] px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">
+                        <svg class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span>${prop.lat ? `${parseFloat(prop.lat).toFixed(4)}, ${parseFloat(prop.lng).toFixed(4)}` : 'WGS-84'}</span>
+                    </a>
+                </td>
+
+                <!-- Actions Column -->
+                <td class="py-4 px-4 text-right whitespace-nowrap">
+                    <div class="flex items-center justify-end space-x-1.5">
+                        <a href="/?lat=${prop.lat || 22.5850}&lng=${prop.lng || 88.4300}&highlight=${prop.id}" 
+                           target="_blank"
+                           class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition" 
+                           title="View On Discovery Map">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        </a>
+                        <button type="button" 
+                                onclick="toggleArchiveStatus(${prop.id}, '${prop.status}')"
+                                class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition" 
+                                title="${prop.status === 'INACTIVE' ? 'Reactivate' : 'Archive / Deactivate'}">
+                            ${prop.status === 'INACTIVE' ? '🔄' : '📦'}
+                        </button>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    // Helper for HTML escaping
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/'/g, "\\'");
+    }
+
+    // Handle Quick Status Change via Inline Dropdown
+    window.handleStatusChange = async function(propertyId, newStatus) {
+        const select = document.getElementById(`status-select-${propertyId}`);
+        const originalStatus = select.getAttribute('data-current') || 'ACTIVE';
+
+        try {
+            // Apply optimistic style update
+            select.className = `text-[11px] font-extrabold uppercase tracking-wide py-1 px-2.5 rounded-xl border ${getStatusBadgeClasses(newStatus)} bg-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 transition`;
+
+            await window.apiClient(`/api/v1/properties/${propertyId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            select.setAttribute('data-current', newStatus);
+            window.showToast('Status Updated', `Property #${propertyId} status changed to ${newStatus.replace('_', ' ')}.`);
+            
+            // Reload inventory counts
+            loadInventory();
+        } catch (err) {
+            console.error('Failed to update status:', err);
+            select.value = originalStatus;
+            select.className = `text-[11px] font-extrabold uppercase tracking-wide py-1 px-2.5 rounded-xl border ${getStatusBadgeClasses(originalStatus)} bg-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 transition`;
+            window.showToast('Update Failed', err.message || 'Could not update status.', true);
+        }
+    };
+
+    // Quick Archive/Reactivate Toggle
+    window.toggleArchiveStatus = function(propertyId, currentStatus) {
+        const nextStatus = currentStatus === 'INACTIVE' ? 'ACTIVE' : 'INACTIVE';
+        window.handleStatusChange(propertyId, nextStatus);
+    };
+
+    // Open Inline Price Modal
+    window.openPriceModal = function(id, title, currentPrice) {
+        editingPropertyId = id;
+        document.getElementById('priceModalTitle').textContent = title;
+        const input = document.getElementById('newPriceInput');
+        input.value = currentPrice;
+        document.getElementById('priceModalFormatted').textContent = formatCurrency(currentPrice);
+        document.getElementById('priceEditModal').classList.remove('hidden');
+        document.getElementById('priceEditModal').classList.add('flex');
+        input.focus();
+    };
+
+    window.closePriceModal = function() {
+        document.getElementById('priceEditModal').classList.add('hidden');
+        document.getElementById('priceEditModal').classList.remove('flex');
+        editingPropertyId = null;
+    };
+
+    // Live formatted price preview in modal
+    document.getElementById('newPriceInput').addEventListener('input', function(e) {
+        document.getElementById('priceModalFormatted').textContent = formatCurrency(e.target.value);
+    });
+
+    // Submit Price Update
+    window.submitPriceUpdate = async function() {
+        if (!editingPropertyId) return;
+        const priceVal = parseFloat(document.getElementById('newPriceInput').value);
+        if (isNaN(priceVal) || priceVal <= 0) {
+            window.showToast('Invalid Price', 'Please enter a valid price amount.', true);
+            return;
+        }
+
+        const saveBtn = document.getElementById('savePriceBtn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            const updated = await window.apiClient(`/api/v1/properties/${editingPropertyId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify({ price: priceVal })
+            });
+
+            window.showToast('Price Updated', `Listing valuation adjusted to ${formatCurrency(priceVal)}.`);
+            closePriceModal();
+            loadInventory();
+        } catch (err) {
+            console.error('Failed to update price:', err);
+            window.showToast('Price Update Failed', err.message || 'Could not update price.', true);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Price';
+        }
+    };
+
+    // Status Tab Buttons Click Handler
+    statusTabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            statusTabBtns.forEach(b => {
+                b.classList.remove('active', 'border-2', 'border-emerald-500');
+                b.classList.add('border', 'border-slate-200', 'dark:border-slate-800');
+            });
+            this.classList.add('active', 'border-2', 'border-emerald-500');
+            this.classList.remove('border-slate-200', 'dark:border-slate-800');
+
+            activeFilterStatus = this.getAttribute('data-status-filter');
+            loadInventory();
+        });
+    });
+
+    // Debounced Search Input
+    searchInput.addEventListener('input', function(e) {
+        currentSearchTerm = e.target.value.trim();
+        if (currentSearchTerm) {
+            clearSearchBtn.classList.remove('hidden');
+        } else {
+            clearSearchBtn.classList.add('hidden');
+        }
+
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(loadInventory, 300);
+    });
+
+    clearSearchBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        currentSearchTerm = '';
+        clearSearchBtn.classList.add('hidden');
+        loadInventory();
+    });
+
+    // Dropdown Filters
+    bhkFilter.addEventListener('change', function(e) {
+        currentBhk = e.target.value;
+        loadInventory();
+    });
+
+    typeFilter.addEventListener('change', function(e) {
+        currentPropertyType = e.target.value;
+        loadInventory();
+    });
+
+    sortSelect.addEventListener('change', function(e) {
+        currentOrdering = e.target.value;
+        loadInventory();
+    });
+
+    // Reset Filters
+    window.resetAllFilters = function() {
+        searchInput.value = '';
+        currentSearchTerm = '';
+        clearSearchBtn.classList.add('hidden');
+        bhkFilter.value = '';
+        currentBhk = '';
+        typeFilter.value = '';
+        currentPropertyType = '';
+        sortSelect.value = '-created_at';
+        currentOrdering = '-created_at';
+        activeFilterStatus = 'ALL';
+
+        statusTabBtns.forEach(b => {
+            b.classList.remove('active', 'border-2', 'border-emerald-500');
+            b.classList.add('border', 'border-slate-200', 'dark:border-slate-800');
+            if (b.getAttribute('data-status-filter') === 'ALL') {
+                b.classList.add('active', 'border-2', 'border-emerald-500');
+                b.classList.remove('border-slate-200', 'dark:border-slate-800');
+            }
+        });
+
+        loadInventory();
+    };
+
+    resetBtn.addEventListener('click', resetAllFilters);
+
+    // Initial Load
+    loadInventory();
+});
+</script>
+{% endblock %}

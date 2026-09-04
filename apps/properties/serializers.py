@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.gis.geos import Point
-from .models import Property, PropertyImage, PropertyType, PropertyStatus
+from .models import Property, PropertyImage, PropertyType, PropertyStatus, PropertyInquiry
 
 
 class PropertyImageSerializer(serializers.ModelSerializer):
@@ -43,3 +43,23 @@ class PropertySerializer(serializers.ModelSerializer):
         if lat is not None and lng is not None:
             instance.location = Point(lng, lat, srid=4326)
         return super().update(instance, validated_data)
+
+
+class PropertyInquirySerializer(serializers.ModelSerializer):
+    property_title = serializers.ReadOnlyField(source='property.title')
+    property_price = serializers.ReadOnlyField(source='property.price')
+    property_address = serializers.ReadOnlyField(source='property.address')
+    property_bedrooms = serializers.ReadOnlyField(source='property.bedrooms')
+    agent_name = serializers.ReadOnlyField(source='property.agent.get_full_name')
+
+    class Meta:
+        model = PropertyInquiry
+        fields = [
+            'id', 'property', 'property_title', 'property_price',
+            'property_address', 'property_bedrooms', 'agent_name',
+            'buyer', 'name', 'email', 'phone', 'message',
+            'preferred_visit_date', 'status', 'agent_notes',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'property', 'created_at', 'updated_at']
+

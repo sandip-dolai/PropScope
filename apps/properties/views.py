@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 from django.db.models import Q
 from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
 from django.contrib.gis.measure import D
-from .models import Property, PropertyStatus, PropertyImage
-from .serializers import PropertySerializer, PropertyImageSerializer
+from .models import Property, PropertyStatus, PropertyImage, PropertyInquiry, InquiryStatus
+from .serializers import PropertySerializer, PropertyImageSerializer, PropertyInquirySerializer
 from .permissions import IsAgentOrAdminOrReadOnly
 
 
@@ -357,6 +357,180 @@ class PropertyImageDetailView(APIView):
         image_obj.save()
         serializer = PropertyImageSerializer(image_obj)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PropertyInquiryCreateView(APIView):
+    """
+    Public or authenticated buyer inquiry submission for an active property.
+    Supports scheduling a preferred site visit date.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        try:
+            property_obj = Property.objects.select_related('agent').get(pk=pk)
+        except Property.DoesNotExist:
+            return Response({"error": "Property not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        buyer_user = request.user if request.user.is_authenticated else None
+
+        name = request.data.get('name', '').strip()
+        email = request.data.get('email', '').strip()
+        phone = request.data.get('phone', '').strip()
+        message = request.data.get('message', '').strip()
+        preferred_visit_date = request.data.get('preferred_visit_date', None)
+
+        if buyer_user:
+            if not name:
+                name = buyer_user.get_full_name() or buyer_user.username
+            if not email:
+                email = buyer_user.email
+
+        if not name:
+            return Response({"error": "Name is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not email:
+            return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Parse preferred_visit_date if provided
+        if preferred_visit_date == '':
+            preferred_visit_date = None
+
+        inquiry = PropertyInquiry.objects.create(
+            property=property_obj,
+            buyer=buyer_user,
+            name=name,
+            email=email,
+            phone=phone,
+            message=message,
+            preferred_visit_date=preferred_visit_date,
+            status=InquiryStatus.NEW
+        )
+
+        serializer = PropertyInquirySerializer(inquiry)
+        return Response({
+            "message": "Your inquiry and site visit request have been registered with the listing agent.",
+            "inquiry": serializer.data
+        }, status=status.HTTP_201_CREATED)
+
+
+class AgentLeadsAPIView(APIView):
+    """
+    Lead CRM pipeline management API for licensed agents and platform administrators.
+    - Agents access inquiries for their represented properties.
+    - Admins access platform-wide leads.
+    - Supports search, status filtering, and property filtering.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if not (user.is_agent or user.is_platform_admin):
+            return Response(
+                {"error": "Only licensed agents and platform administrators may access leads management."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if user.is_platform_admin:
+            base_qs = PropertyInquiry.objects.all().select_related('property', 'buyer', 'property__agent')
+        else:
+            base_qs = PropertyInquiry.objects.filter(property__agent=user).select_related('property', 'buyer', 'property__agent')
+
+        status_counts = {
+            "total": base_qs.count(),
+            "new": base_qs.filter(status=InquiryStatus.NEW).count(),
+            "contacted": base_qs.filter(status=InquiryStatus.CONTACTED).count(),
+            "site_visit": base_qs.filter(status=InquiryStatus.SITE_VISIT).count(),
+            "negotiation": base_qs.filter(status=InquiryStatus.NEGOTIATION).count(),
+            "closed": base_qs.filter(status=InquiryStatus.CLOSED).count(),
+            "lost": base_qs.filter(status=InquiryStatus.LOST).count(),
+        }
+
+        qs = base_qs
+
+        # Search parameter
+        search_query = request.query_params.get('search', '').strip()
+        if search_query:
+            qs = qs.filter(
+                Q(name__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(phone__icontains=search_query) |
+                Q(property__title__icontains=search_query)
+            )
+
+        # Status filter
+        status_filter = request.query_params.get('status', '').strip().upper()
+        if status_filter and status_filter != 'ALL':
+            qs = qs.filter(status=status_filter)
+
+        # Property ID filter
+        property_id = request.query_params.get('property_id')
+        if property_id:
+            qs = qs.filter(property_id=property_id)
+
+        # Ordering
+        ordering = request.query_params.get('ordering', '-created_at')
+        allowed_orderings = {'-created_at', 'created_at', 'preferred_visit_date', '-preferred_visit_date', 'name', '-name'}
+        if ordering in allowed_orderings:
+            qs = qs.order_by(ordering)
+        else:
+            qs = qs.order_by('-created_at')
+
+        serializer = PropertyInquirySerializer(qs, many=True)
+        return Response({
+            "status_counts": status_counts,
+            "count": len(qs),
+            "results": serializer.data
+        })
+
+
+class AgentLeadDetailView(APIView):
+    """
+    Update inquiry status or append internal agent notes.
+    Delete inquiry.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _get_inquiry(self, request, pk):
+        try:
+            inquiry = PropertyInquiry.objects.select_related('property', 'property__agent').get(pk=pk)
+        except PropertyInquiry.DoesNotExist:
+            return None, Response({"error": "Inquiry not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not (request.user.is_platform_admin or inquiry.property.agent == request.user):
+            return None, Response(
+                {"error": "You do not have permission to manage this buyer lead."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        return inquiry, None
+
+    def patch(self, request, pk):
+        inquiry, error_resp = self._get_inquiry(request, pk)
+        if error_resp:
+            return error_resp
+
+        if 'status' in request.data:
+            new_status = request.data['status'].strip().upper()
+            if new_status in InquiryStatus.values:
+                inquiry.status = new_status
+            else:
+                return Response({"error": f"Invalid status '{new_status}'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if 'agent_notes' in request.data:
+            inquiry.agent_notes = str(request.data['agent_notes'])
+
+        inquiry.save()
+        serializer = PropertyInquirySerializer(inquiry)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        inquiry, error_resp = self._get_inquiry(request, pk)
+        if error_resp:
+            return error_resp
+
+        inquiry.delete()
+        return Response({"message": "Buyer lead deleted successfully."}, status=status.HTTP_200_OK)
+
 
 
 

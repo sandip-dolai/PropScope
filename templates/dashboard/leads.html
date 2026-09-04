@@ -1,0 +1,648 @@
+{% extends 'layouts/dashboard.html' %}
+
+{% block title %}Buyer Leads & Sales CRM — PropScope Command Center{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- Page Header & Breadcrumbs -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div>
+            <div class="flex items-center space-x-2 text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                <a href="{% url 'dashboard' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">&larr; Command Center</a>
+                <span>/</span>
+                <span class="text-slate-800 dark:text-slate-200">Buyer Leads CRM</span>
+            </div>
+            <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                <span>Buyer Inquiries & Sales Pipeline</span>
+                <span id="headerTotalBadge" class="text-xs font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    Loading...
+                </span>
+            </h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Manage inbound buyer inquiries, schedule site visits, track communication stages, and record negotiation notes.
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-3 self-start sm:self-auto">
+            <a href="{% url 'property_inventory' %}" 
+               class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition">
+                <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                <span>View Inventory</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Live Toast Notification -->
+    <div id="leadsToast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-2xl flex items-center space-x-3">
+        <div id="toastIcon" class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
+            ✓
+        </div>
+        <div class="flex-grow">
+            <h4 id="toastTitle" class="text-xs font-extrabold text-slate-900 dark:text-white">Lead Updated</h4>
+            <p id="toastMessage" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Changes saved successfully.</p>
+        </div>
+        <button onclick="hideLeadsToast()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 text-xs">✕</button>
+    </div>
+
+    <!-- Pipeline Lifecycle Metric Tabs -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+        <button type="button" data-status-filter="ALL" class="lead-tab-btn active px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border-2 border-emerald-500 shadow-sm text-left transition hover:border-emerald-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">All Leads</span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountTotal" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-slate-400">100%</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="NEW" class="lead-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-emerald-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> New
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountNew" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Inbox</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="CONTACTED" class="lead-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-blue-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Contacted
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountContacted" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400">Active</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="SITE_VISIT" class="lead-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-amber-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Site Visit
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountSiteVisit" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">Scheduled</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="NEGOTIATION" class="lead-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-purple-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Negotiation
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountNegotiation" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-purple-600 dark:text-purple-400">Offers</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="CLOSED" class="lead-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-emerald-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Deal Won
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountClosed" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Closed</span>
+            </div>
+        </button>
+
+        <button type="button" data-status-filter="LOST" class="lead-tab-btn px-3.5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-left transition hover:border-rose-500">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Lost
+            </span>
+            <div class="flex items-baseline justify-between mt-1">
+                <span id="statCountLost" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                <span class="text-[10px] font-bold text-slate-400">Dropped</span>
+            </div>
+        </button>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+            <!-- Search -->
+            <div class="lg:col-span-6 relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <input type="text" id="leadsSearchInput" placeholder="Search by buyer name, phone, email, or property title..."
+                       class="w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" />
+                <button id="clearLeadsSearchBtn" type="button" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Status Selector -->
+            <div class="lg:col-span-3">
+                <select id="leadsStatusSelect" class="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="">All Pipeline Stages</option>
+                    <option value="NEW">New Inquiries</option>
+                    <option value="CONTACTED">Contacted</option>
+                    <option value="SITE_VISIT">Site Visit Scheduled</option>
+                    <option value="NEGOTIATION">In Negotiation</option>
+                    <option value="CLOSED">Deal Won / Closed</option>
+                    <option value="LOST">Lost / Dropped</option>
+                </select>
+            </div>
+
+            <!-- Sort Selector -->
+            <div class="lg:col-span-2">
+                <select id="leadsSortSelect" class="w-full py-2.5 px-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="-created_at">Newest First</option>
+                    <option value="created_at">Oldest First</option>
+                    <option value="preferred_visit_date">Visit Date: Earliest</option>
+                    <option value="-preferred_visit_date">Visit Date: Latest</option>
+                </select>
+            </div>
+
+            <!-- Reset -->
+            <div class="lg:col-span-1 flex justify-end">
+                <button id="resetLeadsFilterBtn" type="button" title="Reset all filters"
+                        class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold transition flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leads Data Grid -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm transition-colors">
+        <div class="px-5 py-4 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-900/60">
+            <div class="flex items-center space-x-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Active Leads Queue:</span>
+                <span id="leadsCountDisplay" class="font-mono text-emerald-600 dark:text-emerald-400 font-extrabold">0 leads</span>
+            </div>
+            <div class="text-[11px] text-slate-400">
+                💡 Tip: Advance lead stages directly using the status dropdown or click notes to add follow-up details.
+            </div>
+        </div>
+
+        <div class="overflow-x-auto min-h-[350px] relative">
+            <!-- Loading Skeleton -->
+            <div id="leadsLoadingSkeleton" class="p-6 space-y-4">
+                <div class="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse"></div>
+                <div class="h-12 bg-slate-50 dark:bg-slate-800/60 rounded-xl animate-pulse"></div>
+                <div class="h-12 bg-slate-50 dark:bg-slate-800/60 rounded-xl animate-pulse"></div>
+                <div class="h-12 bg-slate-50 dark:bg-slate-800/60 rounded-xl animate-pulse"></div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="leadsEmptyState" class="hidden py-16 px-4 text-center space-y-3">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-2xl">
+                    📬
+                </div>
+                <h3 class="text-sm font-extrabold text-slate-800 dark:text-slate-200">No buyer leads found</h3>
+                <p class="text-xs text-slate-400 max-w-sm mx-auto">
+                    There are no buyer inquiries matching your selected filter criteria. When visitors inquire via the property drawer, they will appear here.
+                </p>
+                <button onclick="resetLeadsFilters()" class="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs hover:bg-emerald-500/20 transition">
+                    Reset Filters
+                </button>
+            </div>
+
+            <!-- Data Table -->
+            <table id="leadsTable" class="w-full text-left border-collapse text-xs hidden">
+                <thead>
+                    <tr class="border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                        <th class="py-3.5 px-4">Buyer & Contact</th>
+                        <th class="py-3.5 px-4">Asset Inquired</th>
+                        <th class="py-3.5 px-4">Site Visit Date</th>
+                        <th class="py-3.5 px-4">Pipeline Stage</th>
+                        <th class="py-3.5 px-4">Agent Notes</th>
+                        <th class="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="leadsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                    <!-- Dynamic Rows -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Internal Notes Editor Modal -->
+<div id="notesEditModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+            <div>
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Internal Agent Notes</h3>
+                <p id="notesModalBuyerName" class="text-[11px] text-slate-400 truncate max-w-xs mt-0.5">Lead notes</p>
+            </div>
+            <button onclick="closeNotesModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm">✕</button>
+        </div>
+
+        <div class="space-y-3">
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Meeting & Negotiation Notes
+            </label>
+            <textarea id="notesModalTextarea" rows="5" placeholder="Record phone call outcomes, buyer budget constraints, scheduled walkthrough feedback..."
+                      class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2">
+            <button type="button" onclick="closeNotesModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold transition">
+                Cancel
+            </button>
+            <button type="button" id="saveNotesBtn" onclick="submitNotesUpdate()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-500/20 transition">
+                Save Notes
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let activeFilterStatus = 'ALL';
+    let currentSearchTerm = '';
+    let currentOrdering = '-created_at';
+    let leadsData = [];
+    let searchDebounceTimer = null;
+    let editingLeadId = null;
+
+    const searchInput = document.getElementById('leadsSearchInput');
+    const clearSearchBtn = document.getElementById('clearLeadsSearchBtn');
+    const statusSelect = document.getElementById('leadsStatusSelect');
+    const sortSelect = document.getElementById('leadsSortSelect');
+    const resetBtn = document.getElementById('resetLeadsFilterBtn');
+    const skeleton = document.getElementById('leadsLoadingSkeleton');
+    const emptyState = document.getElementById('leadsEmptyState');
+    const tableEl = document.getElementById('leadsTable');
+    const tableBody = document.getElementById('leadsTableBody');
+    const countDisplay = document.getElementById('leadsCountDisplay');
+    const headerTotalBadge = document.getElementById('headerTotalBadge');
+    const leadTabBtns = document.querySelectorAll('.lead-tab-btn');
+
+    // Toast Utility
+    window.showLeadsToast = function(title, message, isError = false) {
+        const toast = document.getElementById('leadsToast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIcon = document.getElementById('toastIcon');
+
+        toastTitle.textContent = title;
+        toastMessage.textContent = message;
+
+        if (isError) {
+            toastIcon.className = 'w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold text-sm shrink-0';
+            toastIcon.textContent = '✕';
+        } else {
+            toastIcon.className = 'w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0';
+            toastIcon.textContent = '✓';
+        }
+
+        toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+        setTimeout(window.hideLeadsToast, 4000);
+    };
+
+    window.hideLeadsToast = function() {
+        document.getElementById('leadsToast').classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+    };
+
+    // Status Badge Helpers
+    function getLeadStatusBadgeClasses(status) {
+        switch(status) {
+            case 'NEW':
+                return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+            case 'CONTACTED':
+                return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30';
+            case 'SITE_VISIT':
+                return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30';
+            case 'NEGOTIATION':
+                return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30';
+            case 'CLOSED':
+                return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
+            case 'LOST':
+                return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+            default:
+                return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30';
+        }
+    }
+
+    // Currency Formatter
+    function formatCurrency(val) {
+        const num = parseFloat(val);
+        if (isNaN(num)) return '₹0';
+        if (num >= 10000000) return `₹ ${(num / 10000000).toFixed(2)} Cr`;
+        if (num >= 100000) return `₹ ${(num / 100000).toFixed(2)} L`;
+        return `₹ ${num.toLocaleString('en-IN')}`;
+    }
+
+    // Load Leads
+    async function loadLeads() {
+        skeleton.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        tableEl.classList.add('hidden');
+
+        try {
+            const params = new URLSearchParams();
+            if (activeFilterStatus && activeFilterStatus !== 'ALL') {
+                params.set('status', activeFilterStatus);
+            }
+            if (currentSearchTerm) {
+                params.set('search', currentSearchTerm);
+            }
+            if (currentOrdering) {
+                params.set('ordering', currentOrdering);
+            }
+
+            const data = await window.apiClient(`/api/v1/properties/leads/?${params.toString()}`);
+            leadsData = data.results || [];
+
+            if (data.status_counts) {
+                const sc = data.status_counts;
+                document.getElementById('statCountTotal').textContent = sc.total || 0;
+                document.getElementById('statCountNew').textContent = sc.new || 0;
+                document.getElementById('statCountContacted').textContent = sc.contacted || 0;
+                document.getElementById('statCountSiteVisit').textContent = sc.site_visit || 0;
+                document.getElementById('statCountNegotiation').textContent = sc.negotiation || 0;
+                document.getElementById('statCountClosed').textContent = sc.closed || 0;
+                document.getElementById('statCountLost').textContent = sc.lost || 0;
+                headerTotalBadge.textContent = `${sc.total || 0} Total Leads`;
+            }
+
+            countDisplay.textContent = `${data.count || 0} matching leads`;
+            renderTable(leadsData);
+        } catch (err) {
+            console.error('Failed to load leads:', err);
+            window.showLeadsToast('Fetch Error', err.message || 'Unable to load leads queue.', true);
+        } finally {
+            skeleton.classList.add('hidden');
+        }
+    }
+
+    // Render Table
+    function renderTable(leads) {
+        if (!leads || leads.length === 0) {
+            emptyState.classList.remove('hidden');
+            tableEl.classList.add('hidden');
+            return;
+        }
+
+        emptyState.classList.add('hidden');
+        tableEl.classList.remove('hidden');
+        tableBody.innerHTML = '';
+
+        leads.forEach(lead => {
+            const tr = document.createElement('tr');
+            tr.id = `lead-row-${lead.id}`;
+            tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group';
+
+            const badgeClasses = getLeadStatusBadgeClasses(lead.status);
+            const cleanPhone = (lead.phone || '').replace(/[^0-9]/g, '');
+
+            tr.innerHTML = `
+                <!-- Buyer & Contact Column -->
+                <td class="py-4 px-4">
+                    <div class="space-y-1">
+                        <div class="font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
+                            <span>${escapeHtml(lead.name)}</span>
+                            ${lead.buyer ? `<span class="text-[9px] px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-600 font-bold">Registered Buyer</span>` : ''}
+                        </div>
+                        <div class="text-[11px] text-slate-400">
+                            ✉️ <a href="mailto:${lead.email}" class="hover:underline">${escapeHtml(lead.email)}</a>
+                        </div>
+                        ${lead.phone ? `
+                            <div class="flex items-center space-x-2 pt-0.5">
+                                <a href="tel:${cleanPhone}" class="inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 transition">
+                                    📞 Call
+                                </a>
+                                <a href="https://wa.me/${cleanPhone}" target="_blank" class="inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition">
+                                    💬 WhatsApp
+                                </a>
+                                <span class="font-mono text-[10px] text-slate-400">${escapeHtml(lead.phone)}</span>
+                            </div>
+                        ` : ''}
+                        ${lead.message ? `
+                            <p class="text-[11px] italic text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/60 p-2 rounded-lg border border-slate-100 dark:border-slate-800/80 mt-1.5 max-w-xs">
+                                "${escapeHtml(lead.message)}"
+                            </p>
+                        ` : ''}
+                    </div>
+                </td>
+
+                <!-- Asset Inquired Column -->
+                <td class="py-4 px-4 whitespace-nowrap">
+                    <div class="space-y-0.5">
+                        <span class="font-bold text-slate-900 dark:text-white truncate max-w-xs block">
+                            ${escapeHtml(lead.property_title || 'Property Listing')}
+                        </span>
+                        <div class="text-[11px] font-black text-emerald-600 dark:text-emerald-400">
+                            ${formatCurrency(lead.property_price)}
+                        </div>
+                        <div class="text-[10px] text-slate-400 truncate max-w-xs">
+                            📍 ${escapeHtml(lead.property_address || '')}
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Site Visit Date Column -->
+                <td class="py-4 px-4 whitespace-nowrap">
+                    ${lead.preferred_visit_date ? `
+                        <div class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 font-extrabold text-xs">
+                            <span>📅</span>
+                            <span>${lead.preferred_visit_date}</span>
+                        </div>
+                    ` : `
+                        <span class="text-[11px] text-slate-400">Not scheduled</span>
+                    `}
+                </td>
+
+                <!-- Pipeline Status Select -->
+                <td class="py-4 px-4 whitespace-nowrap">
+                    <div class="relative inline-block">
+                        <select onchange="handleLeadStatusChange(${lead.id}, this.value)" 
+                                id="lead-status-select-${lead.id}"
+                                class="text-[11px] font-extrabold uppercase tracking-wide py-1 px-2.5 rounded-xl border ${badgeClasses} bg-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                            <option value="NEW" ${lead.status === 'NEW' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">New</option>
+                            <option value="CONTACTED" ${lead.status === 'CONTACTED' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Contacted</option>
+                            <option value="SITE_VISIT" ${lead.status === 'SITE_VISIT' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Site Visit</option>
+                            <option value="NEGOTIATION" ${lead.status === 'NEGOTIATION' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Negotiation</option>
+                            <option value="CLOSED" ${lead.status === 'CLOSED' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Closed / Won</option>
+                            <option value="LOST" ${lead.status === 'LOST' ? 'selected' : ''} class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Lost</option>
+                        </select>
+                    </div>
+                </td>
+
+                <!-- Agent Notes Column -->
+                <td class="py-4 px-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="text-[11px] text-slate-600 dark:text-slate-300 max-w-xs truncate" id="lead-notes-display-${lead.id}">
+                            ${lead.agent_notes ? escapeHtml(lead.agent_notes) : '<span class="text-slate-400 italic">No notes</span>'}
+                        </div>
+                        <button type="button" onclick="openNotesModal(${lead.id}, '${escapeHtml(lead.name)}', '${escapeHtml(lead.agent_notes || '')}')" 
+                                title="Edit Agent Notes"
+                                class="text-slate-400 hover:text-emerald-500 p-1 rounded transition">
+                            ✏️
+                        </button>
+                    </div>
+                </td>
+
+                <!-- Actions Column -->
+                <td class="py-4 px-4 text-right whitespace-nowrap">
+                    <button type="button" onclick="deleteLead(${lead.id})" 
+                            title="Delete Lead"
+                            class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 dark:bg-slate-800 dark:hover:bg-rose-950/60 text-slate-600 hover:text-rose-600 dark:text-slate-300 transition">
+                        🗑️
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // Handle Status Change
+    window.handleLeadStatusChange = async function(leadId, newStatus) {
+        const select = document.getElementById(`lead-status-select-${leadId}`);
+        try {
+            select.className = `text-[11px] font-extrabold uppercase tracking-wide py-1 px-2.5 rounded-xl border ${getLeadStatusBadgeClasses(newStatus)} bg-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 transition`;
+            await window.apiClient(`/api/v1/properties/leads/${leadId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            window.showLeadsToast('Stage Updated', `Lead #${leadId} advanced to ${newStatus.replace('_', ' ')}.`);
+            loadLeads();
+        } catch (err) {
+            console.error('Failed to change lead status:', err);
+            window.showLeadsToast('Update Failed', err.message || 'Could not update status.', true);
+        }
+    };
+
+    // Open Notes Modal
+    window.openNotesModal = function(id, name, existingNotes) {
+        editingLeadId = id;
+        document.getElementById('notesModalBuyerName').textContent = `Notes for ${name}`;
+        document.getElementById('notesModalTextarea').value = existingNotes;
+        document.getElementById('notesEditModal').classList.remove('hidden');
+        document.getElementById('notesEditModal').classList.add('flex');
+        document.getElementById('notesModalTextarea').focus();
+    };
+
+    window.closeNotesModal = function() {
+        document.getElementById('notesEditModal').classList.add('hidden');
+        document.getElementById('notesEditModal').classList.remove('flex');
+        editingLeadId = null;
+    };
+
+    window.submitNotesUpdate = async function() {
+        if (!editingLeadId) return;
+        const notes = document.getElementById('notesModalTextarea').value.trim();
+        const saveBtn = document.getElementById('saveNotesBtn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            await window.apiClient(`/api/v1/properties/leads/${editingLeadId}/`, {
+                method: 'PATCH',
+                body: JSON.stringify({ agent_notes: notes })
+            });
+
+            window.showLeadsToast('Notes Saved', 'Internal agent notes updated.');
+            closeNotesModal();
+            loadLeads();
+        } catch (err) {
+            window.showLeadsToast('Save Failed', err.message || 'Could not save notes.', true);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Notes';
+        }
+    };
+
+    // Delete Lead
+    window.deleteLead = async function(leadId) {
+        if (!confirm('Are you sure you want to delete this buyer lead record?')) return;
+        try {
+            await window.apiClient(`/api/v1/properties/leads/${leadId}/`, {
+                method: 'DELETE'
+            });
+            window.showLeadsToast('Lead Deleted', 'Record removed from pipeline.');
+            loadLeads();
+        } catch (err) {
+            window.showLeadsToast('Delete Failed', err.message || 'Could not delete lead.', true);
+        }
+    };
+
+    // Filter Listeners
+    leadTabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            leadTabBtns.forEach(b => {
+                b.classList.remove('active', 'border-2', 'border-emerald-500');
+                b.classList.add('border', 'border-slate-200', 'dark:border-slate-800');
+            });
+            this.classList.add('active', 'border-2', 'border-emerald-500');
+            this.classList.remove('border-slate-200', 'dark:border-slate-800');
+
+            activeFilterStatus = this.getAttribute('data-status-filter');
+            loadLeads();
+        });
+    });
+
+    searchInput.addEventListener('input', function(e) {
+        currentSearchTerm = e.target.value.trim();
+        if (currentSearchTerm) {
+            clearSearchBtn.classList.remove('hidden');
+        } else {
+            clearSearchBtn.classList.add('hidden');
+        }
+
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(loadLeads, 300);
+    });
+
+    clearSearchBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        currentSearchTerm = '';
+        clearSearchBtn.classList.add('hidden');
+        loadLeads();
+    });
+
+    statusSelect.addEventListener('change', function(e) {
+        activeFilterStatus = e.target.value || 'ALL';
+        leadTabBtns.forEach(b => {
+            b.classList.remove('active', 'border-2', 'border-emerald-500');
+            b.classList.add('border', 'border-slate-200', 'dark:border-slate-800');
+            if (b.getAttribute('data-status-filter') === activeFilterStatus) {
+                b.classList.add('active', 'border-2', 'border-emerald-500');
+                b.classList.remove('border-slate-200', 'dark:border-slate-800');
+            }
+        });
+        loadLeads();
+    });
+
+    sortSelect.addEventListener('change', function(e) {
+        currentOrdering = e.target.value;
+        loadLeads();
+    });
+
+    window.resetLeadsFilters = function() {
+        searchInput.value = '';
+        currentSearchTerm = '';
+        clearSearchBtn.classList.add('hidden');
+        statusSelect.value = '';
+        activeFilterStatus = 'ALL';
+        sortSelect.value = '-created_at';
+        currentOrdering = '-created_at';
+
+        leadTabBtns.forEach(b => {
+            b.classList.remove('active', 'border-2', 'border-emerald-500');
+            b.classList.add('border', 'border-slate-200', 'dark:border-slate-800');
+            if (b.getAttribute('data-status-filter') === 'ALL') {
+                b.classList.add('active', 'border-2', 'border-emerald-500');
+                b.classList.remove('border-slate-200', 'dark:border-slate-800');
+            }
+        });
+
+        loadLeads();
+    };
+
+    resetBtn.addEventListener('click', window.resetLeadsFilters);
+
+    loadLeads();
+});
+</script>
+{% endblock %}

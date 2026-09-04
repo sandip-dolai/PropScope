@@ -99,3 +99,52 @@ class PropertyImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.property.title}"
+
+
+class InquiryStatus(models.TextChoices):
+    NEW = "NEW", "New Inquiry"
+    CONTACTED = "CONTACTED", "Contacted"
+    SITE_VISIT = "SITE_VISIT", "Site Visit Scheduled"
+    NEGOTIATION = "NEGOTIATION", "In Negotiation"
+    CLOSED = "CLOSED", "Closed / Deal Won"
+    LOST = "LOST", "Lost / Dropped"
+
+
+class PropertyInquiry(models.Model):
+    property = models.ForeignKey(
+        Property,
+        on_delete=models.CASCADE,
+        related_name='inquiries'
+    )
+    buyer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inquiries'
+    )
+    name = models.CharField(max_length=150)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True)
+    message = models.TextField(blank=True)
+    preferred_visit_date = models.DateField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=InquiryStatus.choices,
+        default=InquiryStatus.NEW
+    )
+    agent_notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Property Inquiries"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"Inquiry from {self.name} for {self.property.title}"
+

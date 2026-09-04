@@ -54,11 +54,22 @@ class PropertyEditView(TemplateView):
         return context
 
 
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class PropertyLeadsView(TemplateView):
+    template_name = 'dashboard/leads.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not (request.user.is_agent or request.user.is_platform_admin):
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', HomeView.as_view(), name='home'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('dashboard/inventory/', PropertyInventoryView.as_view(), name='property_inventory'),
+    path('dashboard/leads/', PropertyLeadsView.as_view(), name='property_leads'),
     path('dashboard/create/', PropertyCreateView.as_view(), name='property_create'),
     path('dashboard/properties/<int:pk>/edit/', PropertyEditView.as_view(), name='property_edit'),
     

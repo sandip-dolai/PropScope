@@ -114,6 +114,56 @@
             </div>
         </div>
 
+        <!-- Buyer Site Visit & Inquire Action Card -->
+        <div class="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="text-base">📅</span>
+                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Inquire & Schedule Site Visit
+                    </h4>
+                </div>
+                <button type="button" onclick="toggleDrawerInquiryForm()" id="toggleInquiryFormBtn" 
+                        class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+                    Open Form
+                </button>
+            </div>
+            
+            <div id="drawerInquiryFormContainer" class="hidden pt-2 border-t border-emerald-500/15 space-y-3">
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Your Name *</label>
+                        <input type="text" id="inquiryName" placeholder="Full name" value="{% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.username }}{% endif %}"
+                               class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-medium text-slate-900 dark:text-white" />
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Phone Number</label>
+                        <input type="tel" id="inquiryPhone" placeholder="+91 98765 43210" 
+                               class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-medium text-slate-900 dark:text-white" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1">Email Address *</label>
+                    <input type="email" id="inquiryEmail" placeholder="your@email.com" value="{% if request.user.is_authenticated %}{{ request.user.email }}{% endif %}"
+                           class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-medium text-slate-900 dark:text-white" />
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1">Preferred Site Visit Date</label>
+                    <input type="date" id="inquiryVisitDate" 
+                           class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-medium text-slate-900 dark:text-white" />
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1">Message to Agent (Optional)</label>
+                    <textarea id="inquiryMessage" rows="2" placeholder="I am interested in scheduling a walkthrough this weekend..."
+                              class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-medium text-slate-900 dark:text-white"></textarea>
+                </div>
+                <button type="button" id="submitInquiryBtn" onclick="submitDrawerInquiry()" 
+                        class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 transition">
+                    Send Request to Agent
+                </button>
+            </div>
+        </div>
+
     </div>
 
     <!-- Drawer Footer Actions -->
@@ -307,5 +357,60 @@
                 });
             }
         }
+
+        // Toggle Inquiry Form inside Drawer
+        window.toggleDrawerInquiryForm = function() {
+            const container = document.getElementById('drawerInquiryFormContainer');
+            const btn = document.getElementById('toggleInquiryFormBtn');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btn.textContent = 'Collapse';
+            } else {
+                container.classList.add('hidden');
+                btn.textContent = 'Open Form';
+            }
+        };
+
+        // Submit Inquiry Request
+        window.submitDrawerInquiry = async function() {
+            if (!window.activeDrawerPropertyId) return;
+            const name = document.getElementById('inquiryName').value.trim();
+            const email = document.getElementById('inquiryEmail').value.trim();
+            const phone = document.getElementById('inquiryPhone').value.trim();
+            const message = document.getElementById('inquiryMessage').value.trim();
+            const preferredDate = document.getElementById('inquiryVisitDate').value;
+
+            if (!name || !email) {
+                alert('Please provide your name and email address.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitInquiryBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending Request...';
+
+            try {
+                const resp = await window.apiClient(`/api/v1/properties/${window.activeDrawerPropertyId}/inquire/`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        phone,
+                        message,
+                        preferred_visit_date: preferredDate || null
+                    })
+                });
+
+                alert(resp.message || 'Inquiry registered with listing agent!');
+                window.toggleDrawerInquiryForm();
+            } catch (err) {
+                console.error('Inquiry submission error:', err);
+                alert(err.message || 'Could not submit inquiry.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Request to Agent';
+            }
+        };
     });
 </script>
+

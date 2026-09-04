@@ -89,3 +89,52 @@ def test_demo_login_disabled_in_production(client):
     response = client.post('/api/v1/auth/demo-login/', {'persona': 'buyer'}, content_type='application/json')
     assert response.status_code == 403
     assert 'disabled' in response.data['error']
+
+
+@pytest.mark.django_db
+def test_logout(client):
+    # Log in as buyer
+    client.post('/api/v1/auth/demo-login/', {'persona': 'buyer'}, content_type='application/json')
+    assert 'sessionid' in client.cookies
+
+    # Log out
+    response = client.post('/api/v1/auth/logout/')
+    assert response.status_code == 200
+    assert response.data['message'] == 'Logged out successfully'
+
+
+@pytest.mark.django_db
+def test_navbar_guest_rendering(client):
+    response = client.get('/')
+    assert response.status_code == 200
+    content = response.content.decode('utf-8')
+    assert 'Sign In / Demo' in content
+    assert 'id="userDropdownMenu"' not in content
+    assert 'id="userDropdownBtn"' not in content
+
+
+@pytest.mark.django_db
+def test_navbar_buyer_rendering(client):
+    # Log in as buyer
+    client.post('/api/v1/auth/demo-login/', {'persona': 'buyer'}, content_type='application/json')
+    response = client.get('/')
+    assert response.status_code == 200
+    content = response.content.decode('utf-8')
+    assert 'Rahul Sen' in content
+    assert 'Buyer' in content
+    assert 'My Saved Assets' in content
+    assert 'userDropdownMenu' in content
+
+
+@pytest.mark.django_db
+def test_navbar_agent_rendering(client):
+    # Log in as agent
+    client.post('/api/v1/auth/demo-login/', {'persona': 'agent'}, content_type='application/json')
+    response = client.get('/')
+    assert response.status_code == 200
+    content = response.content.decode('utf-8')
+    assert 'Priya Mukherjee' in content
+    assert 'Agent' in content
+    assert 'Agent Console' in content
+    assert 'userDropdownMenu' in content
+

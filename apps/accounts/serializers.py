@@ -6,10 +6,26 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
+    profile = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone_number']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone_number', 'profile']
         read_only_fields = ['id']
+
+    def get_profile(self, obj):
+        if obj.role == UserRole.AGENT and hasattr(obj, 'agent_profile'):
+            return {
+                'agency_name': obj.agent_profile.agency_name,
+                'license_number': obj.agent_profile.license_number,
+                'bio': obj.agent_profile.bio
+            }
+        elif obj.role == UserRole.BUYER and hasattr(obj, 'buyer_profile'):
+            return {
+                'preferred_city': obj.buyer_profile.preferred_city,
+                'preferred_budget': float(obj.buyer_profile.preferred_budget) if obj.buyer_profile.preferred_budget else None
+            }
+        return None
 
 
 class RegisterSerializer(serializers.ModelSerializer):

@@ -1,0 +1,306 @@
+<!-- Slide-Over Asset & Proximity Intelligence Drawer -->
+<div id="assetDrawerBackdrop" class="fixed inset-0 z-[2000] bg-slate-950/40 backdrop-blur-[2px] hidden transition-opacity lg:bg-transparent lg:pointer-events-none"></div>
+
+<aside id="assetDrawer"
+       class="fixed top-0 bottom-0 right-0 z-[2001] w-full max-w-lg bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col pointer-events-auto">
+    
+    <!-- Drawer Header -->
+    <div class="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-start justify-between bg-slate-50/50 dark:bg-slate-950/50">
+        <div>
+            <div class="flex items-center space-x-2 mb-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-[10px] uppercase font-extrabold tracking-widest text-emerald-600 dark:text-emerald-400">
+                    Spatial Asset Intelligence
+                </span>
+                <span class="text-xs text-slate-300 dark:text-slate-700">•</span>
+                <span id="drawerPropertyTypeBadge" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    Apartment
+                </span>
+            </div>
+            <h3 id="drawerAssetTitle" class="text-lg font-extrabold text-slate-900 dark:text-white leading-snug">
+                Asset Specifications
+            </h3>
+            <p id="drawerAssetAddress" class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center">
+                <svg class="w-3.5 h-3.5 mr-1 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span class="truncate">Select a property on the map or feed</span>
+            </p>
+        </div>
+        
+        <div class="flex items-center space-x-1.5 ml-2">
+            <button id="drawerFlyToBtn" type="button" title="Fly Map to Property"
+                    class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            </button>
+            <button id="closeAssetDrawerBtn" type="button" title="Close Drawer"
+                    class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Drawer Scrollable Body -->
+    <div class="flex-grow overflow-y-auto p-5 space-y-6">
+        
+        <!-- Pricing & Key Metrics Strip -->
+        <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/70 dark:from-slate-950 dark:to-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
+            <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Valuation</span>
+                <div id="drawerPriceDisplay" class="text-2xl font-black text-slate-900 dark:text-white">
+                    ₹0.00
+                </div>
+                <div id="drawerRatePerSqft" class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    ₹0 / sqft
+                </div>
+            </div>
+            <div class="flex items-center space-x-3 text-right">
+                <div class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
+                    <span class="block text-xs font-black text-slate-900 dark:text-white" id="drawerBhk">-- BHK</span>
+                    <span class="block text-[9px] uppercase font-bold text-slate-400">Layout</span>
+                </div>
+                <div class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center">
+                    <span class="block text-xs font-black text-slate-900 dark:text-white" id="drawerArea">-- sqft</span>
+                    <span class="block text-[9px] uppercase font-bold text-slate-400">Area</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listed Agent Credentials Card -->
+        <div id="drawerAgentCard" class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                    Mandated Listing Agent
+                </span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <svg class="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                    Verified RERA
+                </span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center font-black text-white text-sm shadow-sm">
+                    PM
+                </div>
+                <div>
+                    <h4 id="drawerAgentName" class="text-xs font-bold text-slate-900 dark:text-white">
+                        Priya Mukherjee
+                    </h4>
+                    <p id="drawerAgencyName" class="text-[11px] text-slate-500 dark:text-slate-400">
+                        North Bengal & Kolkata Realtors
+                    </p>
+                    <p id="drawerAgentLicense" class="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
+                        WB-RERA-2024-5120
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- KNN Nearest Civic Infrastructure Nodes -->
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white flex items-center space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span>Civic Infrastructure Proximity (KNN)</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">PostGIS geodetic distance to closest transit & amenities</p>
+                </div>
+                <span class="text-[10px] font-bold text-slate-400">EPSG:4326</span>
+            </div>
+
+            <div id="drawerProximityList" class="space-y-2.5">
+                <div class="py-8 text-center text-slate-400">
+                    <div class="inline-block w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                    <p class="text-xs font-semibold">Calculating nearest civic nodes via PostGIS KNN engine...</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Drawer Footer Actions -->
+    <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex items-center space-x-3">
+        <button id="drawerSaveFavoriteBtn" type="button"
+                class="flex-1 py-2.5 px-3 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-800 transition shadow-sm flex items-center justify-center space-x-1.5 group">
+            <svg class="w-4 h-4 text-rose-500 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            <span>Bookmark Asset</span>
+        </button>
+
+        <button id="drawerCloseFooterBtn" type="button"
+                class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:text-slate-950 text-xs font-bold transition shadow-sm">
+            Done
+        </button>
+    </div>
+
+</aside>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const assetDrawer = document.getElementById('assetDrawer');
+        const assetDrawerBackdrop = document.getElementById('assetDrawerBackdrop');
+        const closeAssetDrawerBtn = document.getElementById('closeAssetDrawerBtn');
+        const drawerCloseFooterBtn = document.getElementById('drawerCloseFooterBtn');
+        const drawerFlyToBtn = document.getElementById('drawerFlyToBtn');
+
+        let activePropertyCoords = null;
+
+        // In-memory Client Cache for KNN results
+        const proximityCache = new Map();
+
+        // Open Drawer Controller
+        window.openAssetDrawer = function(propertyId, propertyData = null) {
+            assetDrawerBackdrop.classList.remove('hidden');
+            assetDrawer.classList.remove('translate-x-full');
+
+            if (propertyData) {
+                populatePropertyMetadata(propertyData);
+            }
+
+            // Load KNN Proximity Data
+            loadPropertyProximity(propertyId, propertyData);
+        };
+
+        // Close Drawer Controller
+        window.closeAssetDrawer = function() {
+            assetDrawerBackdrop.classList.add('hidden');
+            assetDrawer.classList.add('translate-x-full');
+            if (window.proximityLinesLayer) {
+                window.proximityLinesLayer.clearLayers();
+            }
+        };
+
+        if (closeAssetDrawerBtn) closeAssetDrawerBtn.addEventListener('click', window.closeAssetDrawer);
+        if (drawerCloseFooterBtn) drawerCloseFooterBtn.addEventListener('click', window.closeAssetDrawer);
+        if (assetDrawerBackdrop) assetDrawerBackdrop.addEventListener('click', window.closeAssetDrawer);
+
+        if (drawerFlyToBtn) {
+            drawerFlyToBtn.addEventListener('click', () => {
+                if (activePropertyCoords && window.leafletMapInstance) {
+                    window.leafletMapInstance.flyTo(activePropertyCoords, 16, { duration: 1.2 });
+                }
+            });
+        }
+
+        function populatePropertyMetadata(prop) {
+            document.getElementById('drawerAssetTitle').textContent = prop.title || 'Property Asset';
+            document.getElementById('drawerAssetAddress').querySelector('span').textContent = prop.address || 'Address on file';
+            document.getElementById('drawerPropertyTypeBadge').textContent = prop.property_type || 'Apartment';
+
+            const priceNum = parseFloat(prop.price);
+            let formattedPrice = '₹' + priceNum.toLocaleString('en-IN');
+            if (priceNum >= 10000000) {
+                formattedPrice = `₹${(priceNum / 10000000).toFixed(2)} Cr`;
+            } else if (priceNum >= 100000) {
+                formattedPrice = `₹${(priceNum / 100000).toFixed(2)} L`;
+            }
+            document.getElementById('drawerPriceDisplay').textContent = formattedPrice;
+
+            const areaSqft = parseFloat(prop.area_sqft);
+            const rate = areaSqft > 0 ? Math.round(priceNum / areaSqft) : 0;
+            document.getElementById('drawerRatePerSqft').textContent = `₹${rate.toLocaleString('en-IN')} / sqft`;
+
+            document.getElementById('drawerBhk').textContent = `${prop.bedrooms || 1} BHK`;
+            document.getElementById('drawerArea').textContent = `${areaSqft} sqft`;
+
+            activePropertyCoords = [parseFloat(prop.lat), parseFloat(prop.lng)];
+        }
+
+        async function loadPropertyProximity(propertyId, initialPropData) {
+            const listEl = document.getElementById('drawerProximityList');
+
+            // Category color configs
+            const categoryConfig = {
+                'Metro Station': { color: '#3b82f6', bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30' },
+                'Hospital': { color: '#ef4444', bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/30' },
+                'School': { color: '#f59e0b', bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/30' },
+                'Shopping Mall': { color: '#d946ef', bg: 'bg-fuchsia-500/10', text: 'text-fuchsia-600 dark:text-fuchsia-400', border: 'border-fuchsia-500/30' },
+                'Park': { color: '#10b981', bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/30' },
+            };
+
+            // Check In-Memory Cache first
+            let data = proximityCache.get(propertyId);
+            if (!data) {
+                try {
+                    data = await window.apiClient(`/api/v1/properties/${propertyId}/nearest-amenities/`);
+                    proximityCache.set(propertyId, data);
+                } catch (err) {
+                    listEl.innerHTML = `
+                        <div class="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs">
+                            Could not load infrastructure proximity. Please try again.
+                        </div>
+                    `;
+                    return;
+                }
+            }
+
+            if (!initialPropData && data.property_location) {
+                document.getElementById('drawerAssetTitle').textContent = data.property_title;
+                activePropertyCoords = [data.property_location.lat, data.property_location.lng];
+            }
+
+            const propLat = data.property_location.lat;
+            const propLng = data.property_location.lng;
+
+            if (window.proximityLinesLayer) {
+                window.proximityLinesLayer.clearLayers();
+            }
+
+            const bounds = L.latLngBounds([[propLat, propLng]]);
+
+            listEl.innerHTML = data.nearest_amenities.map(am => {
+                const cfg = categoryConfig[am.category_name] || { color: '#10b981', bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/30' };
+
+                // Draw map connector vectors
+                if (am.lat && am.lng && window.proximityLinesLayer) {
+                    const line = L.polyline([[propLat, propLng], [am.lat, am.lng]], {
+                        color: cfg.color,
+                        weight: 2.5,
+                        dashArray: '6, 6',
+                        opacity: 0.9
+                    }).addTo(window.proximityLinesLayer);
+
+                    line.bindTooltip(`${am.category_name}: ${am.distance_km} km`, {
+                        permanent: false,
+                        direction: 'center',
+                        className: 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-[10px] px-2 py-0.5 rounded-lg shadow-md font-bold'
+                    });
+
+                    bounds.extend([am.lat, am.lng]);
+                }
+
+                let scoreBadgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30';
+                if (am.proximity_score < 50) scoreBadgeClass = 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30';
+                else if (am.proximity_score < 75) scoreBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30';
+
+                return `
+                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition">
+                        <div class="flex items-center space-x-3 min-w-0">
+                            <div class="w-8 h-8 rounded-lg ${cfg.bg} ${cfg.text} border ${cfg.border} flex-shrink-0 flex items-center justify-center font-black text-xs">
+                                ${am.category_name.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div class="min-w-0 pr-2">
+                                <span class="text-[9px] font-extrabold uppercase tracking-wider ${cfg.text}">${am.category_name}</span>
+                                <h5 class="text-xs font-bold text-slate-900 dark:text-white truncate">${am.amenity_name}</h5>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">${am.address || ''}</p>
+                            </div>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-xs font-black text-slate-900 dark:text-white">${am.distance_km} km</div>
+                            <span class="inline-block mt-0.5 text-[9px] px-2 py-0.2 rounded-full font-bold border ${scoreBadgeClass}">
+                                ${am.proximity_label}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Pan and fit map bounds to comfortably show property and nearest amenities
+            if (window.leafletMapInstance && data.nearest_amenities.length > 0) {
+                window.leafletMapInstance.fitBounds(bounds, {
+                    paddingTopLeft: [50, 50],
+                    paddingBottomRight: [window.innerWidth >= 1024 ? 460 : 50, 50],
+                    maxZoom: 14,
+                    duration: 1.0
+                });
+            }
+        }
+    });
+</script>

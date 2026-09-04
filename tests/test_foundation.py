@@ -131,3 +131,15 @@ def test_protected_polygon_search_with_csrf(client):
     )
     assert post_resp.status_code == 200
 
+
+@pytest.mark.django_db
+def test_asset_drawer_rendered_in_public_layout(client):
+    response = client.get('/')
+    assert response.status_code == 200
+    content = response.content.decode('utf-8')
+    assert 'id="assetDrawer"' in content
+    assert 'id="assetDrawerBackdrop"' in content
+    assert 'window.openAssetDrawer' in content
+    assert 'proximityModal' not in content
+
+

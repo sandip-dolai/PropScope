@@ -14,9 +14,15 @@ class HomeView(TemplateView):
     template_name = 'home.html'
 
 
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class DashboardView(TemplateView):
+    template_name = 'dashboard/index.html'
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', HomeView.as_view(), name='home'),
+    path('dashboard/', DashboardView.as_view(), name='dashboard'),
     
     # API Schema and Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

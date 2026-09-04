@@ -1,0 +1,344 @@
+{% extends 'layouts/dashboard.html' %}
+
+{% block title %}Agent Command Center — PropScope Spatial Portfolio Analytics{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Guest / Unauthorized Alert (Shown if unauthenticated or buyer) -->
+    <div id="unauthorizedBanner" class="hidden p-6 rounded-3xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-center space-y-3">
+        <div class="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Agent Credentials Required</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            The Command Center requires an authenticated <strong>Licensed Real Estate Agent</strong> or <strong>Administrator</strong> persona. Please log in or use the 1-click Agent Priya demo persona.
+        </p>
+        <div class="pt-2">
+            <a href="{% url 'home' %}" class="inline-flex items-center px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-sm hover:bg-emerald-500 transition">
+                Return to Public Map &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Body -->
+    <div id="dashboardMain" class="space-y-8">
+        <!-- Executive Persona Header Banner -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-colors">
+            <div class="flex items-center space-x-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center font-black text-xl text-white shadow-md shadow-emerald-500/20 flex-shrink-0">
+                    <span id="agentInitials">AG</span>
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <h1 id="agentName" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                            Loading Portfolio...
+                        </h1>
+                        <span id="scopeBadge" class="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                            Verified Agent
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center space-x-2">
+                        <span id="agencyName">🏢 Real Estate Enterprise</span>
+                        <span>•</span>
+                        <span id="licenseNumber" class="font-mono text-slate-600 dark:text-slate-300">WB-RERA Verified</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Telemetry & Refresh -->
+            <div class="flex items-center space-x-3 self-end md:self-auto">
+                <div class="text-right hidden sm:block">
+                    <span class="block text-[10px] uppercase font-bold text-slate-400">PostGIS GiST Engine</span>
+                    <span id="lastSyncedText" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Real-time sync</span>
+                </div>
+                <button id="refreshMetricsBtn" type="button" title="Refresh Telemetry"
+                        class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shadow-sm border border-slate-200/80 dark:border-slate-700/80">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- 4 Top-Tier Executive KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- KPI 1: Total Portfolio AUM -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-colors">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Portfolio AUM</span>
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                </div>
+                <div>
+                    <h3 id="kpiAum" class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">₹0.00</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Active inventory valuation</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+                    <span>Live in PostGIS spatial index</span>
+                </div>
+            </div>
+
+            <!-- KPI 2: Active Inventory Count -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-colors">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Active Inventory</span>
+                    <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    </div>
+                </div>
+                <div>
+                    <h3 id="kpiActiveCount" class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">0</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Properties on market</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-[10px] font-semibold text-slate-400">
+                    <span id="kpiTotalListings">0 registered listings</span>
+                </div>
+            </div>
+
+            <!-- KPI 3: Average Yield Rate -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-colors">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Price / SqFt Density</span>
+                    <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    </div>
+                </div>
+                <div>
+                    <h3 id="kpiRateSqft" class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">₹0 / sqft</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Weighted average density</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-[10px] font-semibold text-slate-400">
+                    <span id="kpiAvgTicket">Avg ticket: ₹0</span>
+                </div>
+            </div>
+
+            <!-- KPI 4: Deal Pipeline Velocity -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-colors">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Deal Pipeline</span>
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                </div>
+                <div>
+                    <h3 id="kpiSoldRented" class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">0</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Assets closed / leased</p>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-[10px] font-semibold text-slate-400">
+                    <span id="kpiInactiveCount">0 inactive / pending</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2-Column Analytical Visuals (Submarket Exposure + BHK Matrix) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left: Submarket Geographical Exposure (PostGIS ST_Within) (8 Cols) -->
+            <div class="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2.5"></span>
+                            Sub-Market Geographical Exposure
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Asset dispersion evaluated by PostGIS boundary polygons</p>
+                    </div>
+                    <span class="text-[10px] font-mono font-bold text-slate-400 uppercase bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">ST_Within</span>
+                </div>
+
+                <div id="submarketsContainer" class="space-y-4 pt-2">
+                    <div class="py-8 text-center text-slate-400 text-xs">Loading sub-market exposure...</div>
+                </div>
+            </div>
+
+            <!-- Right: Configuration Distribution Matrix (5 Cols) -->
+            <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5 transition-colors">
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center">
+                        <span class="w-2.5 h-2.5 rounded-full bg-purple-500 mr-2.5"></span>
+                        Asset Configuration Breakdown
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Inventory distribution by bedroom specification</p>
+                </div>
+
+                <div id="bhkContainer" class="grid grid-cols-2 gap-3 pt-2">
+                    <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">1 BHK</span>
+                        <h4 id="bhk1Count" class="text-xl font-black text-slate-900 dark:text-white mt-1">0</h4>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">2 BHK</span>
+                        <h4 id="bhk2Count" class="text-xl font-black text-slate-900 dark:text-white mt-1">0</h4>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">3 BHK</span>
+                        <h4 id="bhk3Count" class="text-xl font-black text-slate-900 dark:text-white mt-1">0</h4>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">4+ BHK</span>
+                        <h4 id="bhk4Count" class="text-xl font-black text-slate-900 dark:text-white mt-1">0</h4>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">
+                    <div class="font-extrabold text-emerald-800 dark:text-emerald-400">Strategic Portfolio Insight</div>
+                    <p class="text-emerald-700/80 dark:text-emerald-300/80 text-[11px] leading-relaxed">
+                        High-demand 3 BHK inventory accounts for key investor inquiries across the Kolkata metropolitan corridor.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Asset Activity Table -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4 transition-colors">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-2.5"></span>
+                        Recent Asset Activity Pipeline
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Most recently updated properties in managed inventory</p>
+                </div>
+                <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Showing Top 5 Listings</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-100 dark:border-slate-800/80 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                            <th class="pb-3 pr-4">Property</th>
+                            <th class="pb-3 px-4">Specs</th>
+                            <th class="pb-3 px-4">Price</th>
+                            <th class="pb-3 px-4">Status</th>
+                            <th class="pb-3 pl-4">Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentPropsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                        <tr>
+                            <td colspan="5" class="py-8 text-center text-slate-400 text-xs">Loading recent inventory...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const unauthorizedBanner = document.getElementById('unauthorizedBanner');
+        const dashboardMain = document.getElementById('dashboardMain');
+        const refreshMetricsBtn = document.getElementById('refreshMetricsBtn');
+
+        async function fetchDashboardMetrics() {
+            try {
+                const data = await window.apiClient('/api/v1/analytics/dashboard-metrics/');
+                if (!data) return;
+
+                // Agent Info
+                if (data.agent_profile) {
+                    document.getElementById('agentName').textContent = data.agent_profile.name;
+                    document.getElementById('agencyName').textContent = `🏢 ${data.agent_profile.agency_name}`;
+                    document.getElementById('licenseNumber').textContent = `RERA: ${data.agent_profile.license_number}`;
+                    const initials = data.agent_profile.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                    document.getElementById('agentInitials').textContent = initials;
+                }
+                if (data.scope_title) {
+                    document.getElementById('scopeBadge').textContent = data.scope_title;
+                }
+
+                // KPIs
+                const metrics = data.metrics || {};
+                document.getElementById('kpiAum').textContent = metrics.formatted_aum || '₹0.00';
+                document.getElementById('kpiActiveCount').textContent = metrics.active_count ?? 0;
+                document.getElementById('kpiTotalListings').textContent = `${metrics.total_listings ?? 0} registered listings`;
+                document.getElementById('kpiRateSqft').textContent = `₹${metrics.avg_price_sqft?.toLocaleString() || 0} / sqft`;
+                document.getElementById('kpiAvgTicket').textContent = `Avg ticket: ${metrics.formatted_avg_price || '₹0'}`;
+                document.getElementById('kpiSoldRented').textContent = (metrics.sold_count || 0) + (metrics.rented_count || 0);
+                document.getElementById('kpiInactiveCount').textContent = `${metrics.inactive_count || 0} inactive / pending`;
+
+                // Submarket Exposure Progress Bars
+                const submarketsContainer = document.getElementById('submarketsContainer');
+                const submarkets = data.submarkets || [];
+                const totalInSubmarkets = submarkets.reduce((acc, s) => acc + s.count, 0) || 1;
+
+                if (submarkets.length === 0) {
+                    submarketsContainer.innerHTML = '<div class="py-4 text-center text-slate-400 text-xs">No sub-market exposure recorded yet.</div>';
+                } else {
+                    submarketsContainer.innerHTML = submarkets.map(sub => {
+                        const pct = Math.round((sub.count / totalInSubmarkets) * 100);
+                        return `
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between text-xs font-bold">
+                                    <span class="text-slate-800 dark:text-slate-200">${sub.name}</span>
+                                    <span class="text-slate-500 font-semibold text-[11px]">${sub.count} assets (${pct}%)</span>
+                                </div>
+                                <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                    <div class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // BHK Breakdown
+                const bhk = data.bhk_breakdown || {};
+                document.getElementById('bhk1Count').textContent = bhk["1 BHK"] ?? 0;
+                document.getElementById('bhk2Count').textContent = bhk["2 BHK"] ?? 0;
+                document.getElementById('bhk3Count').textContent = bhk["3 BHK"] ?? 0;
+                document.getElementById('bhk4Count').textContent = bhk["4+ BHK"] ?? 0;
+
+                // Recent Table
+                const recentPropsTableBody = document.getElementById('recentPropsTableBody');
+                const recent = data.recent_properties || [];
+
+                if (recent.length === 0) {
+                    recentPropsTableBody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs">No listings recorded.</td></tr>';
+                } else {
+                    recentPropsTableBody.innerHTML = recent.map(p => `
+                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                            <td class="py-3.5 pr-4">
+                                <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs">${p.title}</div>
+                                <div class="text-[11px] text-slate-400 truncate max-w-xs">${p.address}</div>
+                            </td>
+                            <td class="py-3.5 px-4 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                ${p.bedrooms} BHK • ${p.area_sqft} sqft
+                            </td>
+                            <td class="py-3.5 px-4 font-extrabold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                                ${p.formatted_price}
+                            </td>
+                            <td class="py-3.5 px-4 whitespace-nowrap">
+                                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                                    p.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20' :
+                                    p.status === 'SOLD' ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20' :
+                                    'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                }">
+                                    ${p.status}
+                                </span>
+                            </td>
+                            <td class="py-3.5 pl-4 text-slate-400 text-[11px] whitespace-nowrap">
+                                ${p.updated_at}
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                document.getElementById('lastSyncedText').textContent = `Synced at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+            } catch (err) {
+                console.error('Failed to load dashboard metrics:', err);
+                if (err.status === 403 || err.status === 401) {
+                    unauthorizedBanner.classList.remove('hidden');
+                    dashboardMain.classList.add('hidden');
+                }
+            }
+        }
+
+        if (refreshMetricsBtn) {
+            refreshMetricsBtn.addEventListener('click', fetchDashboardMetrics);
+        }
+
+        fetchDashboardMetrics();
+    });
+</script>
+{% endblock %}

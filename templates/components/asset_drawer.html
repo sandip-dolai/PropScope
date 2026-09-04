@@ -10,7 +10,7 @@
             <div class="flex items-center space-x-2 mb-1.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span class="text-[10px] uppercase font-extrabold tracking-widest text-emerald-600 dark:text-emerald-400">
-                    Spatial Asset Intelligence
+                    Property Details & Intelligence
                 </span>
                 <span class="text-xs text-slate-300 dark:text-slate-700">•</span>
                 <span id="drawerPropertyTypeBadge" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
@@ -18,7 +18,7 @@
                 </span>
             </div>
             <h3 id="drawerAssetTitle" class="text-lg font-extrabold text-slate-900 dark:text-white leading-snug">
-                Asset Specifications
+                Property Specifications
             </h3>
             <p id="drawerAssetAddress" class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center">
                 <svg class="w-3.5 h-3.5 mr-1 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -44,7 +44,7 @@
         <!-- Pricing & Key Metrics Strip -->
         <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/70 dark:from-slate-950 dark:to-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
             <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Valuation</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Price</span>
                 <div id="drawerPriceDisplay" class="text-2xl font-black text-slate-900 dark:text-white">
                     ₹0.00
                 </div>
@@ -68,7 +68,7 @@
         <div id="drawerAgentCard" class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                    Mandated Listing Agent
+                    Listing Agent
                 </span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                     <svg class="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
@@ -85,7 +85,7 @@
                             Priya Mukherjee
                         </h4>
                         <p id="drawerAgencyName" class="text-[11px] text-slate-500 dark:text-slate-400">
-                            Accredited Mandate Partner
+                            Verified Real Estate Partner
                         </p>
                         <p id="drawerAgentLicense" class="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
                             WB-RERA Verified
@@ -100,15 +100,15 @@
             </div>
         </div>
 
-        <!-- KNN Nearest Civic Infrastructure Nodes -->
+        <!-- Nearby Transit & Civic Amenities -->
         <div>
             <div class="flex items-center justify-between mb-3">
                 <div>
                     <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white flex items-center space-x-1.5">
                         <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                        <span>Civic Infrastructure Proximity (KNN)</span>
+                        <span>Nearby Transit & Civic Amenities</span>
                     </h4>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400">PostGIS geodetic distance to closest transit & amenities</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Distances to nearest transit hubs, hospitals, and amenities</p>
                 </div>
                 <span class="text-[10px] font-bold text-slate-400">EPSG:4326</span>
             </div>
@@ -116,7 +116,7 @@
             <div id="drawerProximityList" class="space-y-2.5">
                 <div class="py-8 text-center text-slate-400">
                     <div class="inline-block w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <p class="text-xs font-semibold">Calculating nearest civic nodes via PostGIS KNN engine...</p>
+                    <p class="text-xs font-semibold">Calculating nearest transit and civic amenities...</p>
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.gis.geos import Point
@@ -49,3 +49,39 @@ class AmenityNearbyView(APIView):
             "count": len(queryset),
             "results": serializer.data
         })
+
+
+class AmenityNearestPointView(APIView):
+    """
+    Returns the nearest amenity in each category for an arbitrary lat/lng point,
+    enriched with proximity scores and detected submarket area.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        try:
+            lat = float(request.query_params.get('lat'))
+            lng = float(request.query_params.get('lng'))
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "lat and lng must be provided as valid floating point numbers"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        from .services import AmenitySpatialService
+        from apps.geography.models import Area
+
+        point = Point(lng, lat, srid=4326)
+        nearest = AmenitySpatialService.get_nearest_amenities_for_point(point, enrich_with_scores=True)
+        area = Area.objects.filter(boundary__contains=point).first()
+
+        return Response({
+            "location": {"lat": lat, "lng": lng},
+            "submarket": {
+                "id": area.id,
+                "name": area.name,
+                "city": area.city
+            } if area else None,
+            "nearest_amenities": nearest
+        })
+

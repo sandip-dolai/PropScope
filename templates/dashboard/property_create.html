@@ -1,0 +1,499 @@
+{% extends 'layouts/dashboard.html' %}
+
+{% block title %}Add Geospatial Listing — PropScope Command Center{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- Page Header & Navigation Breadcrumb -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-5 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div>
+            <div class="flex items-center space-x-2 text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                <a href="{% url 'dashboard' %}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition">&larr; Command Center</a>
+                <span>/</span>
+                <span class="text-slate-800 dark:text-slate-200">Asset Induction</span>
+            </div>
+            <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Spatial Asset Induction & Listing Creator
+            </h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Drop pin on the cartographic canvas to capture precise WGS-84 coordinates. Live PostGIS KNN engine evaluates nearby transit and civic infrastructure in real-time.
+            </p>
+        </div>
+
+        <a href="{% url 'dashboard' %}" 
+           class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition self-start sm:self-auto">
+            <span>Cancel</span>
+        </a>
+    </div>
+
+    <!-- Alert / Toast Container -->
+    <div id="formAlert" class="hidden p-4 rounded-2xl text-xs font-bold transition-all"></div>
+
+    <!-- 2-Column Creator Layout: Left Map & KNN, Right Specifications -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+        <!-- Column 1: Spatial Pin-Drop Map & Live KNN Infrastructure Preview (7 Cols) -->
+        <div class="lg:col-span-7 space-y-5">
+            <!-- Pin-Drop Map Canvas -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm flex flex-col transition-colors">
+                <!-- Map Header Overlay -->
+                <div class="p-3.5 border-b border-slate-200/90 dark:border-slate-800 flex items-center justify-between bg-slate-50/90 dark:bg-slate-900/80 backdrop-blur-sm z-20 relative">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">Geospatial Pin-Drop Canvas</span>
+                        <span class="text-[10px] text-slate-400 font-mono">EPSG:4326</span>
+                    </div>
+                    <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hidden sm:inline">
+                        Click or drag pin to position
+                    </span>
+                </div>
+
+                <!-- Leaflet Canvas -->
+                <div id="pinDropMap" class="w-full h-[400px] z-10"></div>
+
+                <!-- Coordinate & Detected Sub-Market Telemetry Footer -->
+                <div class="p-3.5 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[11px] font-bold text-slate-400">Position:</span>
+                        <span id="coordDisplay" class="font-mono font-bold text-slate-900 dark:text-white">[22.5850, 88.4300]</span>
+                    </div>
+                    <div id="submarketBadge" class="px-2.5 py-0.5 rounded-lg bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20 text-[11px] font-bold flex items-center space-x-1">
+                        <span>📍 Locality: Detecting...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live PostGIS KNN Proximity Intelligence Preview -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white flex items-center">
+                            <span class="p-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 mr-2">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            </span>
+                            Live Infrastructure Proximity Profile
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">PostGIS KNN nearest civic amenities calculated on-the-fly for dropped coordinates</p>
+                    </div>
+                    <span class="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-500/20">
+                        PostGIS &lt;-&gt;
+                    </span>
+                </div>
+
+                <!-- 5 Nearest Amenities Cards Container -->
+                <div id="knnContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div class="col-span-full py-6 text-center text-slate-400 text-xs">
+                        <div class="inline-block w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-1"></div>
+                        <p>Evaluating surrounding urban infrastructure...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 2: Listing Specification Form (5 Cols) -->
+        <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm transition-colors">
+            <h2 class="text-base font-extrabold text-slate-900 dark:text-white tracking-tight mb-4 flex items-center space-x-2">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                <span>Asset Specifications</span>
+            </h2>
+
+            <form id="createPropertyForm" class="space-y-4 text-xs">
+                <!-- Title -->
+                <div>
+                    <label for="propTitle" class="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Listing Title <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="propTitle" required maxlength="255"
+                           placeholder="e.g. Eco-Sanctuary Skyline 3BHK Residence"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm">
+                </div>
+
+                <!-- Property Type & Status (Row) -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="propType" class="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                            Asset Type <span class="text-rose-500">*</span>
+                        </label>
+                        <select id="propType" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm cursor-pointer font-medium">
+                            <option value="APARTMENT">Apartment</option>
+                            <option value="VILLA">Villa</option>
+                            <option value="HOUSE">Independent House</option>
+                            <option value="PLOT">Plot / Land</option>
+                            <option value="COMMERCIAL">Commercial</option>
+                            <option value="OFFICE">Office Space</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="propStatus" class="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                            Listing Status <span class="text-rose-500">*</span>
+                        </label>
+                        <select id="propStatus" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm cursor-pointer font-medium">
+                            <option value="ACTIVE" selected>Active</option>
+                            <option value="PENDING_APPROVAL">Pending Approval</option>
+                            <option value="INACTIVE">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Price (INR) with Live Conversion -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="propPrice" class="font-bold text-slate-700 dark:text-slate-300">
+                            Listing Price (₹ INR) <span class="text-rose-500">*</span>
+                        </label>
+                        <span id="priceFormattedPreview" class="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">₹0.00</span>
+                    </div>
+                    <input type="number" id="propPrice" required min="100000" step="50000"
+                           placeholder="e.g. 8500000"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm font-mono">
+                </div>
+
+                <!-- Bedrooms & Bathrooms (Row) -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="propBedrooms" class="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                            Bedrooms <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="number" id="propBedrooms" required min="1" max="10" value="3"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm">
+                    </div>
+
+                    <div>
+                        <label for="propBathrooms" class="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                            Bathrooms <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="number" id="propBathrooms" required min="1" max="10" step="0.5" value="2.0"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm">
+                    </div>
+                </div>
+
+                <!-- Super Built-up Area (SqFt) with Live Rate -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="propArea" class="font-bold text-slate-700 dark:text-slate-300">
+                            Super Built-up Area (Sq. Ft.) <span class="text-rose-500">*</span>
+                        </label>
+                        <span id="rateSqftPreview" class="text-[11px] font-bold text-purple-600 dark:text-purple-400">₹0 / sqft</span>
+                    </div>
+                    <input type="number" id="propArea" required min="100" step="10"
+                           placeholder="e.g. 1450"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm font-mono">
+                </div>
+
+                <!-- Address -->
+                <div>
+                    <label for="propAddress" class="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Physical Address / Locality Landmark <span class="text-rose-500">*</span>
+                    </label>
+                    <textarea id="propAddress" required rows="2"
+                              placeholder="e.g. Tower 3, Action Area II, Major Arterial Road, New Town, Kolkata"
+                              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm leading-relaxed"></textarea>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label for="propDescription" class="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Marketing Description <span class="text-rose-500">*</span>
+                    </label>
+                    <textarea id="propDescription" required rows="3"
+                              placeholder="Describe key architectural highlights, balcony vistas, and interior specifications..."
+                              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shadow-sm leading-relaxed"></textarea>
+                </div>
+
+                <!-- Lat & Lng Readonly Lock -->
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center space-x-1">
+                            <span>Latitude</span>
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        </label>
+                        <input type="text" id="propLat" readonly required
+                               class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-mono text-[11px] cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center space-x-1">
+                            <span>Longitude</span>
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        </label>
+                        <input type="text" id="propLng" readonly required
+                               class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 font-mono text-[11px] cursor-not-allowed">
+                    </div>
+                </div>
+
+                <!-- Submit Action -->
+                <div class="pt-3">
+                    <button type="submit" id="submitBtn"
+                            class="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Publish Geospatial Listing</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('createPropertyForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const formAlert = document.getElementById('formAlert');
+        const propPrice = document.getElementById('propPrice');
+        const propArea = document.getElementById('propArea');
+        const priceFormattedPreview = document.getElementById('priceFormattedPreview');
+        const rateSqftPreview = document.getElementById('rateSqftPreview');
+        const propLat = document.getElementById('propLat');
+        const propLng = document.getElementById('propLng');
+        const coordDisplay = document.getElementById('coordDisplay');
+        const submarketBadge = document.getElementById('submarketBadge');
+        const knnContainer = document.getElementById('knnContainer');
+
+        // Initial coordinates (Salt Lake / New Town Corridor)
+        let currentLat = 22.5850;
+        let currentLng = 88.4300;
+
+        propLat.value = currentLat.toFixed(6);
+        propLng.value = currentLng.toFixed(6);
+        coordDisplay.textContent = `[${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}]`;
+
+        // Initialize Pin-Drop Map
+        const map = L.map('pinDropMap', {
+            zoomControl: true,
+            scrollWheelZoom: false
+        }).setView([currentLat, currentLng], 14);
+
+        // Tile layer
+        const isDark = document.documentElement.classList.contains('dark');
+        const lightTiles = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        const darkTiles = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+        
+        L.tileLayer(isDark ? darkTiles : lightTiles, {
+            maxZoom: 18,
+            attribution: 'Map &copy; PropScope & OpenStreetMap'
+        }).addTo(map);
+
+        // Geodesic connector lines layer group
+        const connectorLinesLayer = L.featureGroup().addTo(map);
+        const amenitiesMarkerLayer = L.featureGroup().addTo(map);
+
+        // Custom Pin Icon
+        const pinIcon = L.divIcon({
+            className: 'bg-transparent',
+            html: `
+                <div class="relative flex items-center justify-center">
+                    <span class="absolute w-8 h-8 rounded-full bg-emerald-500/30 animate-ping"></span>
+                    <div class="w-7 h-7 rounded-2xl bg-emerald-600 border-2 border-white shadow-2xl flex items-center justify-center text-white">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                    </div>
+                </div>
+            `,
+            iconSize: [32, 32],
+            iconAnchor: [16, 28]
+        });
+
+        // Add draggable marker
+        const marker = L.marker([currentLat, currentLng], {
+            draggable: true,
+            icon: pinIcon
+        }).addTo(map);
+
+        // Update pin on drag
+        marker.on('dragend', function(e) {
+            const pos = marker.getLatLng();
+            updatePinPosition(pos.lat, pos.lng);
+        });
+
+        // Click map to reposition pin
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            updatePinPosition(e.latlng.lat, e.latlng.lng);
+        });
+
+        let knnDebounceTimer = null;
+
+        function updatePinPosition(lat, lng) {
+            currentLat = lat;
+            currentLng = lng;
+            propLat.value = lat.toFixed(6);
+            propLng.value = lng.toFixed(6);
+            coordDisplay.textContent = `[${lat.toFixed(4)}, ${lng.toFixed(4)}]`;
+
+            // Debounce KNN API preview
+            clearTimeout(knnDebounceTimer);
+            knnDebounceTimer = setTimeout(() => {
+                fetchKNNProximity(lat, lng);
+            }, 300);
+        }
+
+        // Live KNN Proximity Fetcher
+        async function fetchKNNProximity(lat, lng) {
+            submarketBadge.innerHTML = '<span>📍 Locality: Detecting...</span>';
+            connectorLinesLayer.clearLayers();
+            amenitiesMarkerLayer.clearLayers();
+
+            try {
+                const res = await fetch(`/api/v1/amenities/nearest/?lat=${lat}&lng=${lng}`);
+                const data = await res.json();
+
+                // 1. Update Submarket Badge
+                if (data.submarket && data.submarket.name) {
+                    submarketBadge.innerHTML = `<span>📍 Locality: <strong>${data.submarket.name}</strong></span>`;
+                } else {
+                    submarketBadge.innerHTML = `<span>📍 Locality: Greater Metro Extent</span>`;
+                }
+
+                // 2. Render 5 nearest amenities cards & map lines
+                const amenities = data.nearest_amenities || [];
+                if (amenities.length === 0) {
+                    knnContainer.innerHTML = '<div class="col-span-full py-4 text-center text-slate-400 text-xs">No nearby amenities found.</div>';
+                    return;
+                }
+
+                knnContainer.innerHTML = amenities.map(item => {
+                    const score = item.proximity_score ?? 100;
+                    const label = item.proximity_label ?? 'Near';
+                    let badgeBg = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20';
+                    if (score < 50) {
+                        badgeBg = 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20';
+                    }
+
+                    // Plot amenity pin on map
+                    if (item.lat && item.lng) {
+                        const amMarker = L.circleMarker([item.lat, item.lng], {
+                            radius: 5,
+                            fillColor: '#10b981',
+                            color: '#ffffff',
+                            weight: 1.5,
+                            fillOpacity: 0.9
+                        }).addTo(amenitiesMarkerLayer);
+
+                        amMarker.bindTooltip(`${item.category_name}: ${item.amenity_name} (${item.distance_km} km)`, {
+                            direction: 'top',
+                            className: 'font-sans text-[10px] font-bold'
+                        });
+
+                        // Draw connector line
+                        L.polyline([[currentLat, currentLng], [item.lat, item.lng]], {
+                            color: '#10b981',
+                            weight: 1.5,
+                            dashArray: '4, 4',
+                            opacity: 0.6
+                        }).addTo(connectorLinesLayer);
+                    }
+
+                    return `
+                        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 space-y-1 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">${item.category_name}</span>
+                                <span class="text-[10px] font-extrabold px-1.5 py-0.2 rounded border ${badgeBg}">${score}% • ${label}</span>
+                            </div>
+                            <h4 class="font-bold text-slate-900 dark:text-white truncate">${item.amenity_name}</h4>
+                            <div class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center space-x-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"/></svg>
+                                <span>${item.distance_km} km (${item.distance_m} m)</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error('Error loading KNN proximity:', err);
+                knnContainer.innerHTML = '<div class="col-span-full py-2 text-center text-slate-400 text-xs">Proximity preview temporarily unavailable.</div>';
+            }
+        }
+
+        // Initial KNN fetch
+        fetchKNNProximity(currentLat, currentLng);
+
+        // Price formatting helper
+        function formatINR(price) {
+            const num = Number(price);
+            if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
+            if (num >= 100000) return `₹${(num / 100000).toFixed(2)} L`;
+            return `₹${num.toLocaleString('en-IN')}`;
+        }
+
+        function recalculatePriceAndRate() {
+            const p = parseFloat(propPrice.value) || 0;
+            const a = parseFloat(propArea.value) || 0;
+
+            priceFormattedPreview.textContent = p > 0 ? formatINR(p) : '₹0.00';
+            if (p > 0 && a > 0) {
+                const rate = Math.round(p / a);
+                rateSqftPreview.textContent = `₹${rate.toLocaleString('en-IN')} / sqft`;
+            } else {
+                rateSqftPreview.textContent = '₹0 / sqft';
+            }
+        }
+
+        propPrice.addEventListener('input', recalculatePriceAndRate);
+        propArea.addEventListener('input', recalculatePriceAndRate);
+
+        // Form Submit Handler
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            formAlert.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+                <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Inducting Asset...</span>
+            `;
+
+            const payload = {
+                title: document.getElementById('propTitle').value.trim(),
+                description: document.getElementById('propDescription').value.trim(),
+                property_type: document.getElementById('propType').value,
+                status: document.getElementById('propStatus').value,
+                price: parseFloat(propPrice.value),
+                bedrooms: parseInt(document.getElementById('propBedrooms').value),
+                bathrooms: parseFloat(document.getElementById('propBathrooms').value),
+                area_sqft: parseFloat(propArea.value),
+                address: document.getElementById('propAddress').value.trim(),
+                latitude: parseFloat(propLat.value),
+                longitude: parseFloat(propLng.value)
+            };
+
+            try {
+                const response = await window.apiClient('/api/v1/properties/', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                formAlert.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Listing <strong>"${response.title}"</strong> successfully published to the PostGIS spatial index! Redirecting to command center...</span>
+                    </div>
+                `;
+                formAlert.className = 'p-4 rounded-2xl text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30';
+                formAlert.classList.remove('hidden');
+
+                setTimeout(() => {
+                    window.location.href = '{% url "dashboard" %}';
+                }, 1500);
+
+            } catch (err) {
+                console.error('Property creation error:', err);
+                formAlert.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5 text-rose-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <span>Failed to publish listing. Please verify all required parameters and agent permissions.</span>
+                    </div>
+                `;
+                formAlert.className = 'p-4 rounded-2xl text-xs font-bold bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30';
+                formAlert.classList.remove('hidden');
+
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>Publish Geospatial Listing</span>
+                `;
+            }
+        });
+    });
+</script>
+{% endblock %}

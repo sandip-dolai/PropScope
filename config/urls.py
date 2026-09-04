@@ -24,9 +24,34 @@ class PropertyCreateView(TemplateView):
     template_name = 'dashboard/property_create.html'
 
 
+from django.shortcuts import get_object_or_404, redirect
+from django.core.exceptions import PermissionDenied
+from apps.properties.models import Property
+
+
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class PropertyInventoryView(TemplateView):
     template_name = 'dashboard/inventory.html'
+
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class PropertyEditView(TemplateView):
+    template_name = 'dashboard/property_edit.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not (request.user.is_agent or request.user.is_platform_admin):
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pk = kwargs.get('pk')
+        prop = get_object_or_404(Property.objects.select_related('agent').prefetch_related('images'), pk=pk)
+        user = self.request.user
+        if not (user.is_platform_admin or prop.agent == user):
+            raise PermissionDenied("You do not have permission to edit this listing.")
+        context['property'] = prop
+        return context
 
 
 urlpatterns = [
@@ -35,6 +60,7 @@ urlpatterns = [
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('dashboard/inventory/', PropertyInventoryView.as_view(), name='property_inventory'),
     path('dashboard/create/', PropertyCreateView.as_view(), name='property_create'),
+    path('dashboard/properties/<int:pk>/edit/', PropertyEditView.as_view(), name='property_edit'),
     
     # API Schema and Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

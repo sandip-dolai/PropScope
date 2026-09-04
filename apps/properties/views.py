@@ -1,11 +1,11 @@
-from rest_framework import generics, status, permissions
+from rest_framework import generics, status, permissions, parsers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
 from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
 from django.contrib.gis.measure import D
-from .models import Property, PropertyStatus
-from .serializers import PropertySerializer
+from .models import Property, PropertyStatus, PropertyImage
+from .serializers import PropertySerializer, PropertyImageSerializer
 from .permissions import IsAgentOrAdminOrReadOnly
 
 
@@ -240,5 +240,123 @@ class AgentInventoryAPIView(APIView):
             "count": len(qs),
             "results": serializer.data
         })
+
+
+class PropertyImageUploadView(APIView):
+    """
+    Upload one or multiple gallery images for a property.
+    Restricted to the listing's agent or platform administrators.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    def post(self, request, pk):
+        try:
+            property_obj = Property.objects.get(pk=pk)
+        except Property.DoesNotExist:
+            return Response({"error": "Property not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not (request.user.is_platform_admin or property_obj.agent == request.user):
+            return Response(
+                {"error": "You do not have permission to upload images for this listing."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        files = request.FILES.getlist('images')
+        if not files and 'image' in request.FILES:
+            files = [request.FILES['image']]
+
+        if not files:
+            return Response({"error": "No image files provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        caption = request.data.get('caption', '')
+        is_primary = str(request.data.get('is_primary', 'false')).lower() in ['true', '1']
+
+        has_existing_images = property_obj.images.exists()
+        if not has_existing_images:
+            is_primary = True
+
+        created_images = []
+        for idx, file_obj in enumerate(files):
+            set_as_primary = is_primary if idx == 0 else False
+            if set_as_primary:
+                property_obj.images.filter(is_primary=True).update(is_primary=False)
+
+            img = PropertyImage.objects.create(
+                property=property_obj,
+                image=file_obj,
+                caption=caption,
+                is_primary=set_as_primary
+            )
+            created_images.append(img)
+
+        serializer = PropertyImageSerializer(created_images, many=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class PropertyImageDetailView(APIView):
+    """
+    Manage an individual property gallery image (delete or toggle primary badge).
+    Restricted to the listing's agent or platform administrators.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _get_property_and_image(self, request, pk, image_id):
+        try:
+            property_obj = Property.objects.get(pk=pk)
+        except Property.DoesNotExist:
+            return None, None, Response({"error": "Property not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not (request.user.is_platform_admin or property_obj.agent == request.user):
+            return None, None, Response(
+                {"error": "You do not have permission to modify images for this listing."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            image_obj = property_obj.images.get(pk=image_id)
+        except PropertyImage.DoesNotExist:
+            return None, None, Response({"error": "Image not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return property_obj, image_obj, None
+
+    def delete(self, request, pk, image_id):
+        prop, image_obj, error_resp = self._get_property_and_image(request, pk, image_id)
+        if error_resp:
+            return error_resp
+
+        was_primary = image_obj.is_primary
+        if image_obj.image:
+            image_obj.image.delete(save=False)
+        image_obj.delete()
+
+        if was_primary:
+            remaining = prop.images.first()
+            if remaining:
+                remaining.is_primary = True
+                remaining.save(update_fields=['is_primary'])
+
+        return Response({"message": "Image deleted successfully"}, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk, image_id):
+        prop, image_obj, error_resp = self._get_property_and_image(request, pk, image_id)
+        if error_resp:
+            return error_resp
+
+        if 'is_primary' in request.data:
+            is_primary = str(request.data['is_primary']).lower() in ['true', '1']
+            if is_primary:
+                prop.images.filter(is_primary=True).update(is_primary=False)
+                image_obj.is_primary = True
+            else:
+                image_obj.is_primary = False
+
+        if 'caption' in request.data:
+            image_obj.caption = str(request.data['caption'])
+
+        image_obj.save()
+        serializer = PropertyImageSerializer(image_obj)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 

@@ -48,3 +48,38 @@ class RegisterSerializer(serializers.ModelSerializer):
         elif user.role == UserRole.AGENT:
             AgentProfile.objects.create(user=user)
         return user
+
+
+class AgentShowcaseSerializer(serializers.ModelSerializer):
+    agency_name = serializers.SerializerMethodField()
+    license_number = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+    full_name = serializers.CharField(source='get_full_name', default='')
+    monogram = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'first_name', 'last_name', 'full_name',
+            'email', 'phone_number', 'agency_name', 'license_number',
+            'bio', 'monogram'
+        ]
+
+    def get_agency_name(self, obj):
+        profile = getattr(obj, 'agent_profile', None)
+        return profile.agency_name if profile and profile.agency_name else ''
+
+    def get_license_number(self, obj):
+        profile = getattr(obj, 'agent_profile', None)
+        return profile.license_number if profile and profile.license_number else ''
+
+    def get_bio(self, obj):
+        profile = getattr(obj, 'agent_profile', None)
+        return profile.bio if profile and profile.bio else ''
+
+    def get_monogram(self, obj):
+        first = obj.first_name[:1] if obj.first_name else obj.username[:1]
+        last = obj.last_name[:1] if obj.last_name else ''
+        return (first + last).upper()
+
+

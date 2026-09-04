@@ -120,3 +120,61 @@ class DemoLoginView(APIView):
             'user': UserSerializer(user).data
         })
 
+
+class AgentShowcaseAPIView(APIView):
+    """
+    Public showcase API for licensed real estate agents.
+    Returns accredited agency info, WB-RERA certification, portfolio statistics,
+    and all active listings represented by the agent.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        from django.contrib.auth import get_user_model
+        from django.db.models import Avg, Sum
+        from apps.accounts.models import UserRole
+        from apps.properties.models import Property, PropertyStatus
+        from apps.properties.serializers import PropertySerializer
+        from .serializers import AgentShowcaseSerializer
+
+        User = get_user_model()
+
+        try:
+            agent = User.objects.select_related('agent_profile').get(pk=pk, role=UserRole.AGENT)
+        except User.DoesNotExist:
+            return Response({"error": "Agent not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        active_properties = Property.objects.filter(
+            agent=agent,
+            status=PropertyStatus.ACTIVE
+        ).order_by('-created_at')
+
+        total_count = active_properties.count()
+        total_aum = active_properties.aggregate(total=Sum('price'))['total'] or 0
+        avg_price = active_properties.aggregate(avg=Avg('price'))['avg'] or 0
+
+        submarkets = set()
+        for p in active_properties:
+            parts = [s.strip() for s in p.address.split(',')]
+            if len(parts) >= 2:
+                submarkets.add(parts[-2])
+            elif parts:
+                submarkets.add(parts[0])
+
+        agent_data = AgentShowcaseSerializer(agent).data
+        properties_data = PropertySerializer(active_properties, many=True).data
+
+        return Response({
+            "agent": agent_data,
+            "portfolio_stats": {
+                "active_listings_count": total_count,
+                "total_aum_inr": float(total_aum),
+                "total_aum_crores": round(float(total_aum) / 10000000, 2),
+                "average_price_inr": float(avg_price),
+                "average_price_lakhs": round(float(avg_price) / 100000, 2),
+                "submarkets": sorted(list(submarkets))
+            },
+            "properties": properties_data
+        })
+
+

@@ -64,9 +64,53 @@ class PropertyLeadsView(TemplateView):
         return super().dispatch(request, *args, **kwargs)
 
 
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class AgentShowcaseView(TemplateView):
+    template_name = 'agents/showcase.html'
+
+    def get_context_data(self, **kwargs):
+        from django.contrib.auth import get_user_model
+        from django.db.models import Avg, Sum
+        from apps.accounts.models import UserRole
+        from apps.properties.models import Property, PropertyStatus
+
+        context = super().get_context_data(**kwargs)
+        pk = kwargs.get('pk')
+        User = get_user_model()
+        agent = get_object_or_404(User.objects.select_related('agent_profile'), pk=pk, role=UserRole.AGENT)
+
+        active_properties = Property.objects.filter(
+            agent=agent,
+            status=PropertyStatus.ACTIVE
+        ).prefetch_related('images').order_by('-created_at')
+
+        total_count = active_properties.count()
+        total_aum = active_properties.aggregate(total=Sum('price'))['total'] or 0
+        avg_price = active_properties.aggregate(avg=Avg('price'))['avg'] or 0
+
+        submarkets = set()
+        for p in active_properties:
+            parts = [s.strip() for s in p.address.split(',')]
+            if len(parts) >= 2:
+                submarkets.add(parts[-2])
+            elif parts:
+                submarkets.add(parts[0])
+
+        context['agent'] = agent
+        context['properties'] = active_properties
+        context['portfolio_stats'] = {
+            'active_listings_count': total_count,
+            'total_aum_crores': round(float(total_aum) / 10000000, 2),
+            'average_price_lakhs': round(float(avg_price) / 100000, 2),
+            'submarkets': sorted(list(submarkets))
+        }
+        return context
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', HomeView.as_view(), name='home'),
+    path('agents/<int:pk>/', AgentShowcaseView.as_view(), name='agent_showcase'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
     path('dashboard/inventory/', PropertyInventoryView.as_view(), name='property_inventory'),
     path('dashboard/leads/', PropertyLeadsView.as_view(), name='property_leads'),

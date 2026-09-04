@@ -75,21 +75,28 @@
                     Verified RERA
                 </span>
             </div>
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center font-black text-white text-sm shadow-sm">
-                    PM
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div id="drawerAgentMonogram" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center font-black text-white text-sm shadow-sm flex-shrink-0">
+                        PM
+                    </div>
+                    <div>
+                        <h4 id="drawerAgentName" class="text-xs font-bold text-slate-900 dark:text-white">
+                            Priya Mukherjee
+                        </h4>
+                        <p id="drawerAgencyName" class="text-[11px] text-slate-500 dark:text-slate-400">
+                            Accredited Mandate Partner
+                        </p>
+                        <p id="drawerAgentLicense" class="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
+                            WB-RERA Verified
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h4 id="drawerAgentName" class="text-xs font-bold text-slate-900 dark:text-white">
-                        Priya Mukherjee
-                    </h4>
-                    <p id="drawerAgencyName" class="text-[11px] text-slate-500 dark:text-slate-400">
-                        North Bengal & Kolkata Realtors
-                    </p>
-                    <p id="drawerAgentLicense" class="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
-                        WB-RERA-2024-5120
-                    </p>
-                </div>
+                <a id="drawerAgentShowcaseLink" href="#"
+                   class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition border border-emerald-500/20 flex-shrink-0">
+                    <span>Showcase</span>
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </a>
             </div>
         </div>
 
@@ -254,6 +261,24 @@
 
             document.getElementById('drawerBhk').textContent = `${prop.bedrooms || 1} BHK`;
             document.getElementById('drawerArea').textContent = `${areaSqft} sqft`;
+
+            // Populate Agent Credentials & Showcase Link
+            if (prop.agent_name) {
+                const nameEl = document.getElementById('drawerAgentName');
+                if (nameEl) nameEl.textContent = prop.agent_name;
+                const initials = prop.agent_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                const monogramEl = document.getElementById('drawerAgentMonogram');
+                if (monogramEl && initials) monogramEl.textContent = initials;
+            }
+            const showcaseLink = document.getElementById('drawerAgentShowcaseLink');
+            if (showcaseLink) {
+                if (prop.agent) {
+                    showcaseLink.href = `/agents/${prop.agent}/`;
+                    showcaseLink.classList.remove('hidden');
+                } else {
+                    showcaseLink.classList.add('hidden');
+                }
+            }
 
             activePropertyCoords = [parseFloat(prop.lat), parseFloat(prop.lng)];
         }

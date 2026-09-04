@@ -54,6 +54,7 @@ class AgentShowcaseSerializer(serializers.ModelSerializer):
     agency_name = serializers.SerializerMethodField()
     license_number = serializers.SerializerMethodField()
     bio = serializers.SerializerMethodField()
+    is_verified = serializers.SerializerMethodField()
     full_name = serializers.CharField(source='get_full_name', default='')
     monogram = serializers.SerializerMethodField()
 
@@ -62,7 +63,7 @@ class AgentShowcaseSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'first_name', 'last_name', 'full_name',
             'email', 'phone_number', 'agency_name', 'license_number',
-            'bio', 'monogram'
+            'bio', 'is_verified', 'monogram'
         ]
 
     def get_agency_name(self, obj):
@@ -77,9 +78,56 @@ class AgentShowcaseSerializer(serializers.ModelSerializer):
         profile = getattr(obj, 'agent_profile', None)
         return profile.bio if profile and profile.bio else ''
 
+    def get_is_verified(self, obj):
+        profile = getattr(obj, 'agent_profile', None)
+        return bool(profile and profile.is_verified)
+
     def get_monogram(self, obj):
         first = obj.first_name[:1] if obj.first_name else obj.username[:1]
         last = obj.last_name[:1] if obj.last_name else ''
         return (first + last).upper()
+
+
+class AdminAgentSerializer(serializers.ModelSerializer):
+    agency_name = serializers.SerializerMethodField()
+    license_number = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+    is_verified = serializers.SerializerMethodField()
+    full_name = serializers.CharField(source='get_full_name', default='')
+    listings_count = serializers.SerializerMethodField()
+    active_listings_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'first_name', 'last_name', 'full_name',
+            'email', 'phone_number', 'agency_name', 'license_number',
+            'bio', 'is_verified', 'listings_count', 'active_listings_count',
+            'date_joined'
+        ]
+
+    def get_agency_name(self, obj):
+        profile = getattr(obj, 'agent_profile', None)
+        return profile.agency_name if profile and profile.agency_name else ''
+
+    def get_license_number(self, obj):
+        profile = getattr(obj, 'agent_profile', None)
+        return profile.license_number if profile and profile.license_number else ''
+
+    def get_bio(self, obj):
+        profile = getattr(obj, 'agent_profile', None)
+        return profile.bio if profile and profile.bio else ''
+
+    def get_is_verified(self, obj):
+        profile = getattr(obj, 'agent_profile', None)
+        return bool(profile and profile.is_verified)
+
+    def get_listings_count(self, obj):
+        return obj.properties.count()
+
+    def get_active_listings_count(self, obj):
+        from apps.properties.models import PropertyStatus
+        return obj.properties.filter(status=PropertyStatus.ACTIVE).count()
+
 
 

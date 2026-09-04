@@ -43,6 +43,8 @@ class AgentProfile(models.Model):
     agency_name = models.CharField(max_length=150, blank=True, null=True)
     license_number = models.CharField(max_length=100, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
 
     def __str__(self):
         return f"AgentProfile: {self.user.username} ({self.agency_name or 'Independent'})"
+

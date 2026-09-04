@@ -107,11 +107,23 @@ class AgentShowcaseView(TemplateView):
         return context
 
 
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class AdminModerationConsoleView(TemplateView):
+    template_name = 'dashboard/admin_console.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        from django.core.exceptions import PermissionDenied
+        if not request.user.is_authenticated or not request.user.is_platform_admin:
+            raise PermissionDenied("Platform administrator access required.")
+        return super().dispatch(request, *args, **kwargs)
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', HomeView.as_view(), name='home'),
     path('agents/<int:pk>/', AgentShowcaseView.as_view(), name='agent_showcase'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('dashboard/admin/', AdminModerationConsoleView.as_view(), name='admin_console'),
     path('dashboard/inventory/', PropertyInventoryView.as_view(), name='property_inventory'),
     path('dashboard/leads/', PropertyLeadsView.as_view(), name='property_leads'),
     path('dashboard/create/', PropertyCreateView.as_view(), name='property_create'),

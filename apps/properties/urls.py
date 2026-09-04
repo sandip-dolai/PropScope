@@ -13,11 +13,23 @@ from .views import (
     AgentLeadsAPIView,
     AgentLeadDetailView,
 )
+from .admin_views import (
+    AdminModerationStatsAPIView,
+    AdminPropertyListAPIView,
+    AdminPropertyDecisionAPIView,
+    AdminAgentListAPIView,
+    AdminAgentVerifyAPIView,
+)
 
 app_name = 'properties'
 
 urlpatterns = [
     path('', PropertyListCreateView.as_view(), name='property_list_create'),
+    path('admin/moderation/stats/', AdminModerationStatsAPIView.as_view(), name='admin_moderation_stats'),
+    path('admin/moderation/properties/', AdminPropertyListAPIView.as_view(), name='admin_moderation_properties'),
+    path('admin/moderation/properties/<int:pk>/decision/', AdminPropertyDecisionAPIView.as_view(), name='admin_moderation_decision'),
+    path('admin/moderation/agents/', AdminAgentListAPIView.as_view(), name='admin_moderation_agents'),
+    path('admin/moderation/agents/<int:pk>/verify/', AdminAgentVerifyAPIView.as_view(), name='admin_moderation_agent_verify'),
     path('inventory/', AgentInventoryAPIView.as_view(), name='property_inventory_api'),
     path('leads/', AgentLeadsAPIView.as_view(), name='agent_leads_api'),
     path('leads/<int:pk>/', AgentLeadDetailView.as_view(), name='agent_lead_detail'),
@@ -30,3 +42,4 @@ urlpatterns = [
     path('polygon-search/', PropertyPolygonSearchView.as_view(), name='property_polygon_search'),
     path('bbox-search/', PropertyBoundingBoxSearchView.as_view(), name='property_bbox_search'),
 ]
+

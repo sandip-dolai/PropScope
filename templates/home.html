@@ -59,6 +59,13 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
                 <span>Save Search</span>
             </button>
+
+            <!-- Smart Property Match Trigger (Part 6.4) -->
+            <button id="openRecommendationModalBtn" type="button"
+                    class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-md shadow-violet-500/20 transition flex items-center space-x-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                <span>✨ Smart Match</span>
+            </button>
         </div>
     </div>
 
@@ -228,6 +235,9 @@
         </div>
     </div>
 </div>
+
+{% include 'components/recommendation_modal.html' %}
+{% include 'components/recommendation_drawer.html' %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -1066,6 +1076,419 @@
 
         // Initial Load
         loadProperties('/api/v1/properties/');
+
+        // ============================================================
+        // Part 6.4 — Recommendation Controller
+        // ============================================================
+        const RecEngine = (function() {
+            let currentStep = 1;
+            const TOTAL_STEPS = 3;
+            let selectedBhk = null;
+            let lastPreferences = {};
+
+            // ── Element refs ──
+            const modalBackdrop  = document.getElementById('recModalBackdrop');
+            const openBtn        = document.getElementById('openRecommendationModalBtn');
+            const closeModalBtn  = document.getElementById('closeRecModalBtn');
+            const prevBtn        = document.getElementById('recPrevBtn');
+            const nextBtn        = document.getElementById('recNextBtn');
+            const submitBtn      = document.getElementById('recSubmitBtn');
+
+            const drawer         = document.getElementById('recDrawer');
+            const closeDrawerBtn = document.getElementById('closeRecDrawerBtn');
+            const refineBtn      = document.getElementById('recDrawerRefineBtn');
+            const retryBtn       = document.getElementById('recDrawerRetryBtn');
+
+            // ── INR formatter ──
+            function fmt(n) {
+                const num = Number(n);
+                if (num >= 10000000) return `₹${(num/10000000).toFixed(2)} Cr`;
+                if (num >= 100000)  return `₹${(num/100000).toFixed(2)} L`;
+                return `₹${num.toLocaleString('en-IN')}`;
+            }
+
+            // ── Step rendering ──
+            function renderStep(step) {
+                [1,2,3].forEach(s => {
+                    document.getElementById(`recStep${s}`).classList.toggle('hidden', s !== step);
+                    const dot   = document.getElementById(`recStep${s}Dot`);
+                    const label = document.getElementById(`recStep${s}Label`);
+                    if (dot && label) {
+                        const active = s <= step;
+                        dot.className = `w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${
+                            s < step  ? 'bg-violet-600 text-white' :
+                            s === step ? 'bg-violet-600 text-white ring-2 ring-violet-300 dark:ring-violet-800' :
+                                         'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`;
+                        label.className = `text-[11px] font-bold ${
+                            s <= step ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400 dark:text-slate-500'}`;
+                    }
+                });
+                prevBtn.classList.toggle('hidden', step === 1);
+                nextBtn.classList.toggle('hidden', step === TOTAL_STEPS);
+                submitBtn.classList.toggle('hidden', step !== TOTAL_STEPS);
+            }
+
+            // ── Weight normalisation display ──
+            function updateWeightDisplays() {
+                const bud = parseInt(document.getElementById('recWeightBudget').value);
+                const bed = parseInt(document.getElementById('recWeightBedroom').value);
+                const are = parseInt(document.getElementById('recWeightArea').value);
+                const loc = parseInt(document.getElementById('recWeightLocation').value);
+                const total = bud + bed + are + loc || 1;
+                document.getElementById('recWeightBudgetDisplay').textContent   = `${Math.round(bud/total*100)}%`;
+                document.getElementById('recWeightBedroomDisplay').textContent  = `${Math.round(bed/total*100)}%`;
+                document.getElementById('recWeightAreaDisplay').textContent     = `${Math.round(are/total*100)}%`;
+                document.getElementById('recWeightLocationDisplay').textContent = `${Math.round(loc/total*100)}%`;
+                document.getElementById('recWeightTotal').textContent = '= 100%';
+            }
+
+            // ── Validation per step ──
+            function validateStep(step) {
+                if (step === 1) {
+                    const max = parseFloat(document.getElementById('recMaxBudget').value);
+                    if (!max || max < 100000) {
+                        const al = document.getElementById('recStep1Alert');
+                        al.textContent = 'Please enter a valid max budget (minimum ₹1 Lakh).';
+                        al.classList.remove('hidden');
+                        return false;
+                    }
+                    document.getElementById('recStep1Alert').classList.add('hidden');
+                }
+                if (step === 2) {
+                    if (!selectedBhk) {
+                        const al = document.getElementById('recStep2Alert');
+                        al.textContent = 'Please select a bedroom configuration.';
+                        al.classList.remove('hidden');
+                        return false;
+                    }
+                    document.getElementById('recStep2Alert').classList.add('hidden');
+                }
+                return true;
+            }
+
+            // ── Open / Close modal ──
+            function openModal() {
+                currentStep = 1;
+                selectedBhk = null;
+                document.getElementById('recMaxBudget').value = '';
+                document.getElementById('recTargetBudget').value = '';
+                document.getElementById('recMaxBudgetDisplay').textContent = '';
+                document.getElementById('recTargetBudgetDisplay').textContent = '';
+                document.querySelectorAll('.rec-bhk-btn').forEach(b => b.classList.remove('bg-violet-600','text-white','border-violet-600'));
+                document.getElementById('recPropertyType').value = '';
+                document.getElementById('recMinArea').value = '';
+                document.getElementById('recTargetArea').value = '';
+                document.getElementById('recWeightBudget').value = 35;
+                document.getElementById('recWeightBedroom').value = 25;
+                document.getElementById('recWeightArea').value = 15;
+                document.getElementById('recWeightLocation').value = 25;
+                updateWeightDisplays();
+                renderStep(1);
+                modalBackdrop.classList.remove('hidden');
+                modalBackdrop.classList.add('flex');
+            }
+
+            function closeModal() {
+                modalBackdrop.classList.add('hidden');
+                modalBackdrop.classList.remove('flex');
+            }
+
+            // ── Open / Close drawer ──
+            function openDrawer() {
+                drawer.classList.remove('-translate-x-full');
+            }
+
+            function closeDrawer() {
+                drawer.classList.add('-translate-x-full');
+            }
+
+            // ── Drawer state helpers ──
+            function showDrawerLoading() {
+                document.getElementById('recDrawerLoading').classList.remove('hidden');
+                document.getElementById('recDrawerEmpty').classList.add('hidden');
+                document.getElementById('recDrawerResults').classList.add('hidden');
+            }
+
+            function showDrawerEmpty() {
+                document.getElementById('recDrawerLoading').classList.add('hidden');
+                document.getElementById('recDrawerEmpty').classList.remove('hidden');
+                document.getElementById('recDrawerResults').classList.add('hidden');
+            }
+
+            function showDrawerResults() {
+                document.getElementById('recDrawerLoading').classList.add('hidden');
+                document.getElementById('recDrawerEmpty').classList.add('hidden');
+                document.getElementById('recDrawerResults').classList.remove('hidden');
+            }
+
+            // ── Match tier colour mapping ──
+            function tierConfig(tier) {
+                const map = {
+                    'Prime Match':  { bg: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', pill: 'bg-emerald-100 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400', bar: 'bg-emerald-500' },
+                    'Strong Match': { bg: 'bg-blue-500',    text: 'text-blue-700 dark:text-blue-400',       pill: 'bg-blue-100 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 text-blue-700 dark:text-blue-400',       bar: 'bg-blue-500' },
+                    'Good Match':   { bg: 'bg-violet-500',  text: 'text-violet-700 dark:text-violet-400',   pill: 'bg-violet-100 dark:bg-violet-500/10 border-violet-300 dark:border-violet-500/30 text-violet-700 dark:text-violet-400', bar: 'bg-violet-500' },
+                    'Fair Match':   { bg: 'bg-amber-500',   text: 'text-amber-700 dark:text-amber-400',     pill: 'bg-amber-100 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-400',     bar: 'bg-amber-500' },
+                    'Weak Match':   { bg: 'bg-slate-400',   text: 'text-slate-600 dark:text-slate-400',     pill: 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400',           bar: 'bg-slate-400' },
+                };
+                return map[tier] || map['Weak Match'];
+            }
+
+            // ── Dimension bar ──
+            function dimBar(label, score, colorClass) {
+                return `
+                    <div>
+                        <div class="flex justify-between text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-0.5">
+                            <span>${label}</span><span>${score}%</span>
+                        </div>
+                        <div class="h-1 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div class="h-full ${colorClass} rounded-full transition-all" style="width:${score}%"></div>
+                        </div>
+                    </div>`;
+            }
+
+            // ── Render a single result card ──
+            function renderCard(r) {
+                const tc  = tierConfig(r.match_tier || 'Weak Match');
+                const score = r.score || 0;
+                const expl  = r.dimension_explanations || {};
+                const highlights = (r.highlights || []).slice(0, 2);
+                const warnings   = (r.warnings   || []).slice(0, 2);
+
+                const highlightPills = highlights.map(h =>
+                    `<span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">✓ ${h}</span>`
+                ).join('');
+
+                const warningPills = warnings.map(w =>
+                    `<span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">⚠ ${w}</span>`
+                ).join('');
+
+                const bs  = expl.budget   ? expl.budget.score   : (r.budget_score   || 0);
+                const bds = expl.bedroom  ? expl.bedroom.score  : (r.bedroom_score  || 0);
+                const as_ = expl.area     ? expl.area.score     : (r.area_score     || 0);
+                const ls  = expl.location ? expl.location.score : (r.location_score || 0);
+
+                return `
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-violet-400 dark:hover:border-violet-500/50 rounded-2xl p-4 transition-all group shadow-sm hover:shadow-md" data-rec-id="${r.property_id}">
+
+                    <!-- Tier Badge + Score -->
+                    <div class="flex items-center justify-between mb-2.5">
+                        <span class="text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-lg border ${tc.pill}">${r.match_tier || 'Match'}</span>
+                        <div class="flex items-center space-x-1.5">
+                            <div class="text-right">
+                                <div class="text-base font-black ${tc.text}">${score.toFixed(1)}%</div>
+                                <div class="text-[9px] text-slate-400 font-semibold -mt-0.5">Match Score</div>
+                            </div>
+                            <div class="w-8 h-8 relative">
+                                <svg class="w-8 h-8 -rotate-90" viewBox="0 0 32 32">
+                                    <circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="3" class="text-slate-100 dark:text-slate-800"/>
+                                    <circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="75.4" stroke-dashoffset="${75.4 - (75.4 * score / 100)}" class="${tc.text} transition-all"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Property Info -->
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition line-clamp-1 mb-0.5">${r.title}</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-2.5 flex items-center">
+                        <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        ${r.address || ''}
+                    </p>
+
+                    <!-- Match Summary Sentence -->
+                    ${r.match_summary ? `<p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed mb-2.5 italic border-l-2 border-violet-300 dark:border-violet-700 pl-2">${r.match_summary}</p>` : ''}
+
+                    <!-- Spec Strip -->
+                    <div class="flex items-center space-x-3 text-xs font-bold text-slate-700 dark:text-slate-300 py-2 border-y border-slate-100 dark:border-slate-800 mb-2.5">
+                        <span class="text-base font-black text-slate-900 dark:text-white">${fmt(r.price)}</span>
+                        <span class="text-slate-300 dark:text-slate-700">•</span>
+                        <span>${r.bedrooms} BHK</span>
+                        <span class="text-slate-300 dark:text-slate-700">•</span>
+                        <span>${r.area_sqft ? Math.round(r.area_sqft) + ' sqft' : 'N/A'}</span>
+                    </div>
+
+                    <!-- Highlights & Warnings -->
+                    ${(highlightPills || warningPills) ? `<div class="flex flex-wrap gap-1 mb-2.5">${highlightPills}${warningPills}</div>` : ''}
+
+                    <!-- Dimension Score Bars -->
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
+                        ${dimBar('Budget', bs, 'bg-violet-500')}
+                        ${dimBar('Bedrooms', bds, 'bg-indigo-500')}
+                        ${dimBar('Area', as_, 'bg-sky-500')}
+                        ${dimBar('Location', ls, 'bg-emerald-500')}
+                    </div>
+
+                    <!-- View on Map Button -->
+                    <button type="button" class="rec-view-on-map-btn w-full py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 text-slate-700 dark:text-slate-300 dark:hover:text-white text-xs font-bold transition border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center space-x-1.5"
+                            data-prop-id="${r.property_id}" data-lat="${r.location ? r.location.lat : ''}" data-lng="${r.location ? r.location.lng : ''}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                        <span>View on Map & Full Details</span>
+                    </button>
+                </div>`;
+            }
+
+            // ── Render preferences summary pills ──
+            function renderPrefSummary(prefs) {
+                const el = document.getElementById('recDrawerPrefSummary');
+                const pills = [];
+                if (prefs.max_price) pills.push(`<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-500/20">Up to ${fmt(prefs.max_price)}</span>`);
+                if (prefs.bedrooms) pills.push(`<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">${prefs.bedrooms} BHK</span>`);
+                if (prefs.property_type) pills.push(`<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20">${prefs.property_type}</span>`);
+                if (prefs.min_area_sqft) pills.push(`<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">Min ${prefs.min_area_sqft} sqft</span>`);
+                el.innerHTML = pills.join('');
+            }
+
+            // ── Submit preferences & fetch results ──
+            async function submitPreferences() {
+                const bud    = parseFloat(document.getElementById('recMaxBudget').value) || 0;
+                const target = parseFloat(document.getElementById('recTargetBudget').value) || 0;
+                const bhk    = selectedBhk;
+                const ptype  = document.getElementById('recPropertyType').value;
+                const minA   = parseFloat(document.getElementById('recMinArea').value) || 0;
+                const targA  = parseFloat(document.getElementById('recTargetArea').value) || 0;
+
+                const wBud = parseInt(document.getElementById('recWeightBudget').value);
+                const wBed = parseInt(document.getElementById('recWeightBedroom').value);
+                const wAre = parseInt(document.getElementById('recWeightArea').value);
+                const wLoc = parseInt(document.getElementById('recWeightLocation').value);
+                const wTot = wBud + wBed + wAre + wLoc || 1;
+
+                const prefs = {
+                    max_price: bud,
+                    target_price: target,
+                    bedrooms: bhk,
+                    weights: {
+                        budget:   wBud / wTot,
+                        bedroom:  wBed / wTot,
+                        area:     wAre / wTot,
+                        location: wLoc / wTot,
+                    }
+                };
+                if (ptype) prefs.property_type = ptype;
+                if (minA)  prefs.min_area_sqft = minA;
+                if (targA) prefs.target_area_sqft = targA;
+
+                lastPreferences = prefs;
+
+                closeModal();
+                openDrawer();
+                showDrawerLoading();
+                renderPrefSummary(prefs);
+                document.getElementById('recDrawerSubtitle').textContent = 'Scoring every active listing…';
+
+                try {
+                    const data = await window.apiClient('/api/v1/recommendations/normal/', {
+                        method: 'POST',
+                        body: JSON.stringify({ preferences: prefs })
+                    });
+
+                    const results = data.results || [];
+                    document.getElementById('recDrawerSubtitle').textContent = `${results.length} matches ranked by fit score`;
+
+                    if (results.length === 0) {
+                        showDrawerEmpty();
+                        return;
+                    }
+
+                    const feedEl = document.getElementById('recDrawerResults');
+                    feedEl.innerHTML = results.map(renderCard).join('');
+                    showDrawerResults();
+
+                    // Wire up "View on Map" buttons
+                    feedEl.querySelectorAll('.rec-view-on-map-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const propId = parseInt(btn.dataset.propId);
+                            const lat    = parseFloat(btn.dataset.lat);
+                            const lng    = parseFloat(btn.dataset.lng);
+                            if (lat && lng && window.leafletMapInstance) {
+                                window.leafletMapInstance.flyTo([lat, lng], 16, { duration: 1.4 });
+                            }
+                            if (window.inspectPropertyProximity) {
+                                window.inspectPropertyProximity(propId);
+                            }
+                        });
+                    });
+
+                } catch(err) {
+                    console.error('Recommendation fetch failed:', err);
+                    document.getElementById('recDrawerSubtitle').textContent = 'Could not load results. Please try again.';
+                    showDrawerEmpty();
+                }
+            }
+
+            // ── Event Wiring ──
+            if (openBtn) openBtn.addEventListener('click', openModal);
+            if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+            if (modalBackdrop) {
+                modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    if (!validateStep(currentStep)) return;
+                    currentStep = Math.min(currentStep + 1, TOTAL_STEPS);
+                    renderStep(currentStep);
+                });
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    currentStep = Math.max(currentStep - 1, 1);
+                    renderStep(currentStep);
+                });
+            }
+
+            if (submitBtn) submitBtn.addEventListener('click', submitPreferences);
+
+            if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
+            if (refineBtn) refineBtn.addEventListener('click', () => { closeDrawer(); openModal(); });
+            if (retryBtn)  retryBtn.addEventListener('click',  () => { closeDrawer(); openModal(); });
+
+            // BHK selection
+            document.querySelectorAll('.rec-bhk-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectedBhk = parseInt(btn.dataset.bhk);
+                    document.querySelectorAll('.rec-bhk-btn').forEach(b => {
+                        const active = b === btn;
+                        b.classList.toggle('bg-violet-600', active);
+                        b.classList.toggle('text-white', active);
+                        b.classList.toggle('border-violet-600', active);
+                        b.classList.toggle('bg-slate-100', !active);
+                        b.classList.toggle('dark:bg-slate-800', !active);
+                        b.classList.toggle('text-slate-600', !active);
+                        b.classList.toggle('dark:text-slate-300', !active);
+                    });
+                    document.getElementById('recStep2Alert').classList.add('hidden');
+                });
+            });
+
+            // Budget chip quick-select
+            document.querySelectorAll('.rec-budget-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    document.getElementById('recMaxBudget').value    = chip.dataset.max;
+                    document.getElementById('recTargetBudget').value = chip.dataset.target;
+                    document.getElementById('recMaxBudgetDisplay').textContent    = `Max: ${fmt(chip.dataset.max)}`;
+                    document.getElementById('recTargetBudgetDisplay').textContent = `Target: ${fmt(chip.dataset.target)}`;
+                    document.querySelectorAll('.rec-budget-chip').forEach(c => c.classList.remove('bg-violet-600','text-white','border-violet-600'));
+                    chip.classList.add('bg-violet-600','text-white','border-violet-600');
+                });
+            });
+
+            // Live budget display
+            document.getElementById('recMaxBudget').addEventListener('input', e => {
+                const v = parseFloat(e.target.value);
+                document.getElementById('recMaxBudgetDisplay').textContent = v ? `Max: ${fmt(v)}` : '';
+            });
+            document.getElementById('recTargetBudget').addEventListener('input', e => {
+                const v = parseFloat(e.target.value);
+                document.getElementById('recTargetBudgetDisplay').textContent = v ? `Target: ${fmt(v)}` : '';
+            });
+
+            // Weight sliders live update
+            ['recWeightBudget','recWeightBedroom','recWeightArea','recWeightLocation'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateWeightDisplays);
+            });
+        })();
     });
 </script>
 {% endblock %}

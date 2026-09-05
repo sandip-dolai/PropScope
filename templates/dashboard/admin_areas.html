@@ -1,0 +1,57 @@
+{% extends 'layouts/admin_base.html' %}
+
+{% block admin_content %}
+<div class="space-y-4">
+    <h2 class="text-xl font-black text-slate-800 dark:text-white">Neighborhood Geofences</h2>
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm overflow-hidden mt-4">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                    <tr>
+                        <th class="px-5 py-4">Area Name</th>
+                        <th class="px-5 py-4">City</th>
+                        <th class="px-5 py-4">Active Properties</th>
+                        <!-- Placeholder for Actions later -->
+                    </tr>
+                </thead>
+                <tbody id="areaTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    <tr><td colspan="3" class="px-5 py-8 text-center text-slate-400">Loading areas...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    async function loadAreas() {
+        const tbody = document.getElementById('areaTableBody');
+        if(!tbody) return;
+        try {
+            const res = await window.apiClient(`/api/v1/properties/admin/moderation/areas/`);
+            
+            if (!res.results || res.results.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-5 py-8 text-center text-slate-400">No neighborhood geofences found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = res.results.map(a => {
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                        <td class="px-5 py-4 text-xs font-bold">${a.name}</td>
+                        <td class="px-5 py-4 text-xs">${a.city}</td>
+                        <td class="px-5 py-4 text-xs font-semibold">${a.property_count} properties</td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="3" class="px-5 py-8 text-center text-rose-500">Error loading areas.</td></tr>`;
+        }
+    }
+
+    loadAreas();
+});
+</script>
+{% endblock %}

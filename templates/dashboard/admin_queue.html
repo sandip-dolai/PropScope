@@ -1,0 +1,229 @@
+{% extends 'layouts/admin_base.html' %}
+
+{% block admin_content %}
+<div class="space-y-4">
+    <h2 class="text-xl font-black text-slate-800 dark:text-white">Property Moderation Queue</h2>
+    
+    <!-- Action and Filter Bar -->
+    <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        
+        <!-- Bulk Actions -->
+        <div class="flex items-center space-x-2 w-full md:w-auto">
+            <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Action:</label>
+            <select id="bulkActionSelectQueue" class="pl-3 pr-8 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+                <option value="">---------</option>
+                <option value="approve">Approve Selected Properties</option>
+                <option value="reject">Reject Selected Properties</option>
+            </select>
+            <button onclick="window.executeBulkQueueAction()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition shadow-sm">Go</button>
+        </div>
+
+        <div class="flex items-center space-x-3 w-full md:w-auto">
+            <!-- Filter Dropdown -->
+            <select id="statusFilterSelect" class="pl-3 pr-8 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+                <option value="PENDING">Pending Review</option>
+                <option value="ACTIVE">Approved</option>
+                <option value="INACTIVE">Rejected</option>
+                <option value="">All Statuses</option>
+            </select>
+            
+            <!-- Search -->
+            <div class="relative flex-grow sm:w-64">
+                <input type="text" id="propertySearchInput" placeholder="Search title, address..."
+                       class="w-full pl-9 pr-4 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition">
+                <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                    <tr>
+                        <th class="px-5 py-4 w-12">
+                            <input type="checkbox" id="selectAllQueue" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        </th>
+                        <th class="px-5 py-4">Property & Location</th>
+                        <th class="px-5 py-4">Agent Mandate</th>
+                        <th class="px-5 py-4">Valuation</th>
+                        <th class="px-5 py-4 text-center">Status</th>
+                        <th class="px-5 py-4 text-right">Moderation Decision</th>
+                    </tr>
+                </thead>
+                <tbody id="moderationQueueBody" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400 font-semibold">Loading moderation queue...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Pagination Placeholder -->
+        <div class="px-5 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+            <div class="text-xs text-slate-500 font-semibold" id="paginationInfoQueue">Showing 0 properties</div>
+            <div class="flex items-center space-x-2" id="paginationControlsQueue"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentPage = 1;
+    let totalPages = 1;
+    const pageSize = 10;
+
+    async function loadQueue(page = 1) {
+        const tbody = document.getElementById('moderationQueueBody');
+        if(!tbody) return;
+        
+        currentPage = page;
+        const status = document.getElementById('statusFilterSelect').value;
+        const query = document.getElementById('propertySearchInput').value.trim();
+        
+        try {
+            let url = `/api/v1/properties/admin/moderation/properties/?page=${page}`;
+            if (status) url += `&status=${status}`;
+            if (query) url += `&search=${encodeURIComponent(query)}`;
+            
+            const res = await window.apiClient(url);
+            
+            // Uncheck the 'select all' box
+            document.getElementById('selectAllQueue').checked = false;
+            
+            if (!res.results || res.results.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">No properties found.</td></tr>`;
+                document.getElementById('paginationInfoQueue').textContent = 'Showing 0 properties';
+                document.getElementById('paginationControlsQueue').innerHTML = '';
+                return;
+            }
+
+            // Update pagination UI
+            const totalCount = res.count || res.results.length;
+            totalPages = Math.ceil(totalCount / pageSize) || 1;
+            document.getElementById('paginationInfoQueue').textContent = `Showing ${(page-1)*pageSize + 1} to ${Math.min(page*pageSize, totalCount)} of ${totalCount} properties`;
+            
+            let pgHtml = '';
+            if (page > 1) {
+                pgHtml += `<button onclick="window.changeQueuePage(${page-1})" class="px-2 py-1 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition">Prev</button>`;
+            }
+            if (page < totalPages) {
+                pgHtml += `<button onclick="window.changeQueuePage(${page+1})" class="px-2 py-1 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition">Next</button>`;
+            }
+            document.getElementById('paginationControlsQueue').innerHTML = pgHtml;
+
+            tbody.innerHTML = res.results.map(p => {
+                let badge = '';
+                if(p.status === 'PENDING') badge = `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/10 text-amber-600 border border-amber-500/20">Needs Review</span>`;
+                else if(p.status === 'ACTIVE') badge = `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">Approved</span>`;
+                else badge = `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500/10 text-rose-600 border border-rose-500/20">Rejected</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                        <td class="px-5 py-4 w-12">
+                            <input type="checkbox" value="${p.id}" class="queue-row-checkbox rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden flex-shrink-0">
+                                    ${p.images && p.images[0] ? `<img src="${p.images[0].image}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>`}
+                                </div>
+                                <div>
+                                    <div class="font-bold text-xs text-slate-900 dark:text-white max-w-[150px] truncate" title="${p.title}">${p.title}</div>
+                                    <div class="text-[10px] text-slate-500 truncate max-w-[150px]" title="${p.address}">${p.address}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-xs font-bold text-slate-700 dark:text-slate-300">${p.agent_name || 'System'}</div>
+                            <div class="text-[10px] text-slate-400">Agent ID: ${p.agent}</div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-xs font-bold text-slate-900 dark:text-white">$${parseFloat(p.price).toLocaleString()}</div>
+                            <div class="text-[10px] text-slate-400">${p.property_type}</div>
+                        </td>
+                        <td class="px-5 py-4 text-center">${badge}</td>
+                        <td class="px-5 py-4 text-right">
+                            <div class="flex items-center justify-end space-x-2">
+                                <a href="/dashboard/properties/${p.id}/edit/" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold transition">View</a>
+                                ${p.status === 'PENDING' || p.status === 'INACTIVE' ? `<button onclick="window.moderateProperty(${p.id}, 'approve')" class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm text-[11px] font-bold transition">Approve</button>` : ''}
+                                ${p.status === 'PENDING' || p.status === 'ACTIVE' ? `<button onclick="window.moderateProperty(${p.id}, 'reject')" class="px-2.5 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 text-[11px] font-bold transition">Reject</button>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-rose-500 font-bold text-xs">Error loading properties.</td></tr>`;
+        }
+    }
+
+    // Pagination helper
+    window.changeQueuePage = function(page) {
+        loadQueue(page);
+    };
+
+    // Single action
+    window.moderateProperty = async function(propertyId, action) {
+        try {
+            const res = await window.apiClient(`/api/v1/properties/admin/moderation/properties/${propertyId}/decision/`, {
+                method: 'POST',
+                body: JSON.stringify({ action: action })
+            });
+            window.showAdminToast(res.message, true);
+            loadQueue(currentPage);
+        } catch (err) {
+            window.showAdminToast(err.message || 'Moderation action failed.', false);
+        }
+    };
+
+    // Checkbox selection logic
+    document.getElementById('selectAllQueue').addEventListener('change', function(e) {
+        document.querySelectorAll('.queue-row-checkbox').forEach(cb => {
+            cb.checked = e.target.checked;
+        });
+    });
+
+    // Bulk Actions
+    window.executeBulkQueueAction = async function() {
+        const action = document.getElementById('bulkActionSelectQueue').value;
+        if (!action) {
+            window.showAdminToast('Please select an action to perform.', false);
+            return;
+        }
+
+        const selectedIds = Array.from(document.querySelectorAll('.queue-row-checkbox:checked')).map(cb => cb.value);
+        if (selectedIds.length === 0) {
+            window.showAdminToast('No properties selected.', false);
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to perform '${action}' on ${selectedIds.length} properties?`)) return;
+
+        try {
+            const res = await window.apiClient(`/api/v1/properties/admin/moderation/properties/bulk-decision/`, {
+                method: 'POST',
+                body: JSON.stringify({ action: action, property_ids: selectedIds })
+            });
+            window.showAdminToast(res.message || `Bulk action '${action}' completed successfully.`, true);
+            loadQueue(currentPage);
+            document.getElementById('bulkActionSelectQueue').value = '';
+        } catch (err) {
+            window.showAdminToast(err.message || 'Bulk action failed.', false);
+        }
+    };
+
+    // Filter listeners
+    document.getElementById('statusFilterSelect').addEventListener('change', () => loadQueue(1));
+
+    let debounceTimer;
+    document.getElementById('propertySearchInput').addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => loadQueue(1), 300);
+    });
+
+    // Init
+    loadQueue(1);
+});
+</script>
+{% endblock %}

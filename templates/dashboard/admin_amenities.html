@@ -1,0 +1,168 @@
+{% extends 'layouts/admin_base.html' %}
+
+{% block admin_content %}
+<div class="space-y-4">
+    <h2 class="text-xl font-black text-slate-800 dark:text-white">Infrastructure & Amenities</h2>
+    <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div class="relative w-full sm:w-64">
+            <input type="text" id="amenitySearchInput" placeholder="Search amenity..."
+                   class="w-full pl-9 pr-4 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition">
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+        <button onclick="window.openAmenityModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center space-x-2 shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Add Amenity</span>
+        </button>
+    </div>
+    
+    <!-- Amenity Modal -->
+    <div id="amenityModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 id="amenityModalTitle" class="font-bold text-slate-900 dark:text-white">Create New Amenity</h3>
+                <button onclick="window.closeAmenityModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <form id="amenityForm" onsubmit="window.saveAmenity(event)">
+                <input type="hidden" id="amenityId">
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Name</label>
+                        <input type="text" id="amenityName" required
+                               class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Category (ID)</label>
+                        <input type="number" id="amenityCategory" required placeholder="e.g. 1"
+                               class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Address (Optional)</label>
+                        <input type="text" id="amenityAddress"
+                               class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex justify-end space-x-2">
+                    <button type="button" onclick="window.closeAmenityModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-sm">Save Amenity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                    <tr>
+                        <th class="px-5 py-4">Name</th>
+                        <th class="px-5 py-4">Category</th>
+                        <th class="px-5 py-4">Address</th>
+                        <th class="px-5 py-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="amenityTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    <tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">Loading amenities...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    async function loadAmenities() {
+        const tbody = document.getElementById('amenityTableBody');
+        if(!tbody) return;
+        const query = document.getElementById('amenitySearchInput').value.trim();
+        try {
+            let url = `/api/v1/properties/admin/moderation/amenities/`;
+            if (query) url += `?search=${encodeURIComponent(query)}`;
+            const res = await window.apiClient(url);
+            
+            if (!res.results || res.results.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">No amenities found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = res.results.map(a => {
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                        <td class="px-5 py-4 text-xs font-bold">${a.name}</td>
+                        <td class="px-5 py-4 text-xs"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">${a.category_name}</span></td>
+                        <td class="px-5 py-4 text-[11px] text-slate-500">${a.address || 'No address'}</td>
+                        <td class="px-5 py-4 text-right flex items-center justify-end space-x-2">
+                            <button onclick="window.openAmenityModal(${a.id}, '${a.name.replace(/'/g, "\\'")}', ${a.category || ''}, '${(a.address || '').replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 text-xs font-bold transition">Edit</button>
+                            <button onclick="window.deleteAmenity(${a.id})" class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-600 hover:bg-rose-200 text-xs font-bold transition">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="4" class="px-5 py-8 text-center text-rose-500">Error loading amenities.</td></tr>`;
+        }
+    }
+
+        window.deleteAmenity = async function(amenityId) {
+        if (!confirm('Are you sure you want to delete this amenity?')) return;
+        try {
+            const res = await window.apiClient(`/api/v1/properties/admin/moderation/amenities/${amenityId}/`, { method: 'DELETE' });
+            window.showAdminToast(res.message, true);
+            loadAmenities();
+        } catch (err) {
+            window.showAdminToast('Failed to delete amenity.', false);
+        }
+    };
+
+    window.openAmenityModal = function(id = null, name = '', cat = '', address = '') {
+        const modal = document.getElementById('amenityModal');
+        document.getElementById('amenityId').value = id || '';
+        document.getElementById('amenityName').value = name;
+        document.getElementById('amenityCategory').value = cat;
+        document.getElementById('amenityAddress').value = address;
+        document.getElementById('amenityModalTitle').textContent = id ? 'Edit Amenity' : 'Create New Amenity';
+        modal.classList.remove('hidden');
+    };
+
+    window.closeAmenityModal = function() {
+        document.getElementById('amenityModal').classList.add('hidden');
+        document.getElementById('amenityForm').reset();
+    };
+
+    window.saveAmenity = async function(e) {
+        e.preventDefault();
+        const id = document.getElementById('amenityId').value;
+        const data = {
+            name: document.getElementById('amenityName').value,
+            category_id: document.getElementById('amenityCategory').value,
+            address: document.getElementById('amenityAddress').value
+        };
+
+        try {
+            const url = id ? `/api/v1/properties/admin/moderation/amenities/${id}/` : `/api/v1/properties/admin/moderation/amenities/`;
+            const method = id ? 'PUT' : 'POST';
+            
+            const res = await window.apiClient(url, {
+                method: method,
+                body: JSON.stringify(data)
+            });
+            window.showAdminToast(res.message, true);
+            window.closeAmenityModal();
+            loadAmenities();
+        } catch (err) {
+            window.showAdminToast('Failed to save amenity.', false);
+        }
+    };
+
+    let debounceTimer;
+    document.getElementById('amenitySearchInput').addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(loadAmenities, 300);
+    });
+
+    loadAmenities();
+});
+</script>
+{% endblock %}

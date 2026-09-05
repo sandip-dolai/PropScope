@@ -7,19 +7,29 @@
         <div>
             <div class="flex items-center space-x-2.5 mb-1.5">
                 <span class="text-[11px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                    Geospatial Asset Intelligence
+                    {% if request.user.role == 'AGENT' %}Listing Management Hub
+                    {% elif request.user.role == 'ADMIN' %}Platform Overview
+                    {% else %}Property Explorer{% endif %}
                 </span>
                 <span class="text-xs text-slate-400 dark:text-slate-500">•</span>
-                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Kolkata — Barasat Metro Corridor (WGS-84)</span>
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Kolkata · Barasat Metropolitan Region</span>
             </div>
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                Discover Verified Properties & Spatial Intelligence
+                {% if request.user.role == 'AGENT' %}Your Active Listings & Market Coverage
+                {% elif request.user.role == 'ADMIN' %}Live Property Market Overview
+                {% else %}Find Your Next Property in Kolkata & Barasat{% endif %}
             </h1>
             <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-3xl mt-1 leading-relaxed">
-                Explore residential and commercial properties across Kolkata and Barasat with real-time transit proximity, geodesic radius search, and neighborhood geofences.
+                Browse verified apartments, villas, and plots with real-time proximity data and neighbourhood filters.
             </p>
         </div>
-        <div class="flex items-center space-x-3 flex-shrink-0">
+        <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 flex-shrink-0">
+            {% if request.user.role == 'AGENT' %}
+            <a href="{% url 'property_create' %}" class="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md transition flex items-center">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                List a Property
+            </a>
+            {% endif %}
             <div id="resultsCountBadge" class="px-4 py-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center shadow-sm">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse mr-2.5"></span>
                 <span id="resultsCountText">Synchronizing properties...</span>
@@ -32,7 +42,8 @@
         <!-- Configuration Filters -->
         <div class="flex flex-wrap items-center gap-2">
             <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1.5">Configuration:</span>
-            <button class="bhk-filter-btn active px-3.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white shadow-sm transition" data-bhk="">All Configurations</button>
+            <button class="bhk-filter-btn active px-3.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white shadow-sm transition" data-bhk="">All</button>
+            <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="1">1 BHK</button>
             <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="2">2 BHK</button>
             <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="3">3 BHK</button>
             <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="4">4+ BHK</button>
@@ -41,9 +52,9 @@
         <!-- Neighborhood Geofence & Infrastructure Toggle -->
         <div class="flex flex-wrap items-center gap-4">
             <div class="flex items-center space-x-2">
-                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Submarket Area:</span>
+                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Neighbourhood:</span>
                 <select id="neighborhoodSelect" class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl px-3.5 py-1.5 border border-slate-200 dark:border-slate-700/80 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-sm">
-                    <option value="">All Sub-Markets (Entire Metro Extent)</option>
+                    <option value="">All Locations</option>
                 </select>
             </div>
 
@@ -53,19 +64,21 @@
                 <span class="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">Transit & Amenities</span>
             </label>
 
-            <!-- Save Spatial Search Trigger -->
+            <!-- Save Search Trigger -->
             <button id="openSaveSearchModalBtn" type="button"
                     class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 transition shadow-sm flex items-center space-x-1.5">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
                 <span>Save Search</span>
             </button>
 
-            <!-- Smart Property Match Trigger (Part 6.4) -->
+            <!-- Smart Property Match Trigger -->
+            {% if request.user.role == 'BUYER' or request.user.role == 'ADMIN' or not request.user.is_authenticated %}
             <button id="openRecommendationModalBtn" type="button"
                     class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-md shadow-violet-500/20 transition flex items-center space-x-1.5">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
                 <span>✨ Smart Match</span>
             </button>
+            {% endif %}
         </div>
     </div>
 
@@ -90,8 +103,8 @@
             <!-- Parameters Preview Card -->
             <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 mb-4 space-y-1.5 text-xs">
                 <div class="flex items-center justify-between">
-                    <span class="text-slate-500 text-[11px]">Spatial Operator:</span>
-                    <span id="saveModalOperatorBadge" class="font-extrabold text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">Geodesic Radius</span>
+                    <span class="text-slate-500 text-[11px]">Search Type:</span>
+                    <span id="saveModalOperatorBadge" class="font-extrabold text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">Radius</span>
                 </div>
                 <div class="flex items-center justify-between">
                     <span class="text-slate-500 text-[11px]">Configuration:</span>
@@ -136,8 +149,7 @@
             <div class="p-3.5 border-b border-slate-200/90 dark:border-slate-800 flex items-center justify-between bg-slate-50/90 dark:bg-slate-900/80 z-20 relative backdrop-blur-sm transition-colors">
                 <div class="flex items-center space-x-2.5">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    <span class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">Interactive Corridor Map</span>
-                    <span class="text-[10px] text-slate-400 font-mono">EPSG:4326</span>
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">Property Map</span>
                 </div>
                 <div class="hidden sm:flex items-center space-x-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span> Click Map for Radius Search</span>
@@ -186,7 +198,7 @@
                 </div>
             </div>
 
-            <!-- Spatial Query Telemetry Console -->
+            <!-- Active Search Filter -->
             <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm transition-colors flex-grow flex flex-col justify-between">
                 <div>
                     <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center">
@@ -200,16 +212,15 @@
                     <div id="activeFilterInfo" class="text-xs text-slate-500 dark:text-slate-400 space-y-2">
                         <p class="flex items-center text-slate-900 dark:text-slate-200 font-bold">
                             <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-                            All Corridors (Full Metro Region)
+                            All Locations
                         </p>
-                        <p class="text-[11px] text-slate-500 leading-relaxed">Showing all verified properties across the Kolkata-Barasat metropolitan corridor.</p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">Showing all verified properties across the Kolkata-Barasat metropolitan region.</p>
                     </div>
                 </div>
 
                 <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 mt-4">
                     <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        <span>Spatial Engine: PostGIS 16</span>
-                        <span class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">GiST Indexed</span>
+                        <span>Showing results for your area</span>
                     </div>
                 </div>
             </div>
@@ -226,7 +237,7 @@
                         0 listings
                     </span>
                 </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Verified listings matching your current location filter and room configurations.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Sorted by distance from your search area.</p>
             </div>
         </div>
 
@@ -573,9 +584,9 @@
             activeFilterInfo.innerHTML = `
                 <p class="flex items-center text-slate-900 dark:text-slate-200 font-bold">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-                    All Corridors (Full Metro Region)
+                    All Locations
                 </p>
-                <p class="text-[11px] text-slate-500 leading-relaxed">Showing all verified properties across the Kolkata-Barasat metropolitan corridor.</p>
+                <p class="text-[11px] text-slate-500 leading-relaxed">Showing all verified properties across the Kolkata-Barasat metropolitan region.</p>
             `;
 
             currentApiUrl = '/api/v1/properties/';
@@ -808,9 +819,9 @@
                 activeFilterInfo.innerHTML = `
                     <p class="flex items-center text-slate-900 dark:text-slate-200 font-bold">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-                        All Corridors (Full Metro Region)
+                        All Locations
                     </p>
-                    <p class="text-[11px] text-slate-500 leading-relaxed">Showing all verified properties across the Kolkata-Barasat metropolitan corridor.</p>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Showing all verified properties across the Kolkata-Barasat metropolitan region.</p>
                 `;
                 currentApiUrl = '/api/v1/properties/';
                 loadProperties(currentApiUrl);
@@ -1400,6 +1411,10 @@
                             const propId = parseInt(btn.dataset.propId);
                             const lat    = parseFloat(btn.dataset.lat);
                             const lng    = parseFloat(btn.dataset.lng);
+                            
+                            // Close the drawer when viewing on map so user can see it!
+                            closeDrawer();
+                            
                             if (lat && lng && window.leafletMapInstance) {
                                 window.leafletMapInstance.flyTo([lat, lng], 16, { duration: 1.4 });
                             }

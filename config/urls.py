@@ -107,15 +107,31 @@ class AgentShowcaseView(TemplateView):
         return context
 
 
-@method_decorator(ensure_csrf_cookie, name='dispatch')
-class AdminModerationConsoleView(TemplateView):
-    template_name = 'dashboard/admin_console.html'
-
+class AdminBaseView(TemplateView):
+    @method_decorator(ensure_csrf_cookie)
     def dispatch(self, request, *args, **kwargs):
         from django.core.exceptions import PermissionDenied
         if not request.user.is_authenticated or not request.user.is_platform_admin:
             raise PermissionDenied("Platform administrator access required.")
         return super().dispatch(request, *args, **kwargs)
+
+class AdminOverviewView(AdminBaseView):
+    template_name = 'dashboard/admin_overview.html'
+
+class AdminQueueView(AdminBaseView):
+    template_name = 'dashboard/admin_queue.html'
+
+class AdminAgentsView(AdminBaseView):
+    template_name = 'dashboard/admin_agents.html'
+
+class AdminUsersView(AdminBaseView):
+    template_name = 'dashboard/admin_users.html'
+
+class AdminAmenitiesView(AdminBaseView):
+    template_name = 'dashboard/admin_amenities.html'
+
+class AdminAreasView(AdminBaseView):
+    template_name = 'dashboard/admin_areas.html'
 
 
 urlpatterns = [
@@ -123,7 +139,12 @@ urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     path('agents/<int:pk>/', AgentShowcaseView.as_view(), name='agent_showcase'),
     path('dashboard/', DashboardView.as_view(), name='dashboard'),
-    path('dashboard/admin/', AdminModerationConsoleView.as_view(), name='admin_console'),
+    path('dashboard/admin/', AdminOverviewView.as_view(), name='admin_overview'),
+    path('dashboard/admin/queue/', AdminQueueView.as_view(), name='admin_queue'),
+    path('dashboard/admin/agents/', AdminAgentsView.as_view(), name='admin_agents'),
+    path('dashboard/admin/users/', AdminUsersView.as_view(), name='admin_users'),
+    path('dashboard/admin/amenities/', AdminAmenitiesView.as_view(), name='admin_amenities'),
+    path('dashboard/admin/areas/', AdminAreasView.as_view(), name='admin_areas'),
     path('dashboard/inventory/', PropertyInventoryView.as_view(), name='property_inventory'),
     path('dashboard/leads/', PropertyLeadsView.as_view(), name='property_leads'),
     path('dashboard/create/', PropertyCreateView.as_view(), name='property_create'),

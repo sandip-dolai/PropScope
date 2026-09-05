@@ -1,134 +1,174 @@
 {% extends 'base.html' %}
 
 {% block layout %}
-<div class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
-    <!-- Executive Command Center Header -->
-    <header class="border-b border-slate-200/90 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 transition-colors shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- Brand & Console Title -->
-                <div class="flex items-center space-x-3.5">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center font-black text-white text-base shadow-md shadow-emerald-500/20">
-                        PS
-                    </div>
-                    <div>
-                        <div class="flex items-center space-x-2">
-                            <a href="{% url 'home' %}" class="font-extrabold text-base tracking-tight text-slate-900 dark:text-white hover:opacity-90 transition">
-                                PropScope
-                            </a>
-                            <span class="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                                Command Center
-                            </span>
-                        </div>
-                        <p class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 leading-none mt-0.5">Asset Management & Portfolio Telemetry</p>
-                    </div>
+<div class="min-h-screen flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+    
+    <!-- GLOBAL SIDEBAR -->
+    <aside class="hidden md:flex w-64 bg-white dark:bg-slate-900 border-r border-slate-200/90 dark:border-slate-800/80 flex-col flex-shrink-0 sticky top-0 h-screen transition-all">
+        <!-- Brand & Console Title -->
+        <div class="h-16 flex items-center px-4 border-b border-slate-200/90 dark:border-slate-800/80">
+            <div class="flex items-center space-x-3.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center font-black text-white text-sm shadow-md shadow-emerald-500/20">
+                    PS
                 </div>
-
-                <!-- Right Actions: Switch to Map, Theme Switcher, Persona Pill -->
-                <div class="flex items-center space-x-2 sm:space-x-4">
-                    <!-- Return to Public Discovery Map -->
-                    <a href="{% url 'home' %}" 
-                       title="Return to Public Map"
-                       class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition border border-slate-200/80 dark:border-slate-700/80">
-                        <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-                        <span class="hidden sm:inline">Market Viewport</span>
-                    </a>
-
-                    <!-- Theme Switcher -->
-                    <button id="themeToggleBtn" type="button" aria-label="Toggle theme" title="Toggle Theme"
-                            class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shadow-sm border border-slate-200/80 dark:border-slate-700/60">
-                        <svg id="themeIconSun" class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        <svg id="themeIconMoon" class="w-4 h-4 block dark:hidden text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
-                    </button>
-
-                    <!-- Persona Avatar & Dropdown -->
-                    <div class="flex items-center space-x-2.5 pl-2 sm:border-l border-slate-200 dark:border-slate-800">
-                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center font-extrabold text-xs text-white shadow-sm">
-                            {{ request.user.first_name|slice:":1"|default:request.user.username|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|default:""|upper }}
-                        </div>
-                        <div class="hidden md:block text-left">
-                            <div class="text-xs font-bold text-slate-900 dark:text-white leading-tight">
-                                {{ request.user.get_full_name|default:request.user.username }}
-                            </div>
-                            <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                                {% if request.user.role == 'AGENT' %}Licensed Agent{% else %}Admin{% endif %}
-                            </span>
-                        </div>
-                        <!-- Logout Button -->
-                        <button id="dashboardLogoutBtn" type="button" title="Sign Out"
-                                class="p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                        </button>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <a href="{% url 'home' %}" class="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white hover:opacity-90 transition">
+                            PropScope
+                        </a>
+                        <span class="text-[9px] uppercase font-extrabold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                            CMD
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Workstation Tab Bar with Responsive Horizontal Scroll -->
-        <div class="bg-slate-50/90 dark:bg-slate-900/60 border-t border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-6 lg:px-8">
-            <div class="max-w-7xl mx-auto flex items-center space-x-1 sm:space-x-4 text-xs font-bold overflow-x-auto whitespace-nowrap py-1">
-                <a href="{% url 'dashboard' %}" 
-                   class="px-3 py-2 flex items-center space-x-1.5 flex-shrink-0 {% if request.resolver_match.url_name == 'dashboard' %}border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400{% else %}text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition{% endif %}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                    <span>Portfolio Analytics</span>
-                </a>
-                <a href="{% url 'property_inventory' %}" 
-                   class="px-3 py-2 flex items-center space-x-1.5 flex-shrink-0 {% if request.resolver_match.url_name == 'property_inventory' %}border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400{% else %}text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition{% endif %}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-                    <span>Inventory Grid</span>
-                </a>
-                <a href="{% url 'property_leads' %}" 
-                   class="px-3 py-2 flex items-center space-x-1.5 flex-shrink-0 {% if request.resolver_match.url_name == 'property_leads' %}border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400{% else %}text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition{% endif %}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                    <span>Buyer Leads CRM</span>
-                </a>
-                <a href="{% url 'property_create' %}" 
-                   class="px-3 py-2 flex items-center space-x-1.5 flex-shrink-0 {% if request.resolver_match.url_name == 'property_create' %}border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400{% else %}text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition{% endif %}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>Add Listing</span>
-                </a>
-                {% if request.user.is_platform_admin %}
-                <a href="{% url 'admin_console' %}" 
-                   class="px-3 py-2 flex items-center space-x-1.5 flex-shrink-0 {% if request.resolver_match.url_name == 'admin_console' %}border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400{% else %}text-slate-600 dark:text-slate-300 hover:text-emerald-500 transition{% endif %}">
+        <!-- Navigation Links -->
+        <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto text-xs font-bold">
+            <div class="px-2 pb-1 pt-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Platform Telemetry</div>
+            
+            <a href="{% url 'dashboard' %}" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl {% if request.resolver_match.url_name == 'dashboard' %}bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>Portfolio Analytics</span>
+            </a>
+            
+            <a href="{% url 'property_inventory' %}" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl {% if request.resolver_match.url_name == 'property_inventory' %}bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                <span>Inventory Grid</span>
+            </a>
+            
+            <a href="{% url 'property_leads' %}" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl {% if request.resolver_match.url_name == 'property_leads' %}bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span>Buyer Leads CRM</span>
+            </a>
+            
+            <a href="{% url 'property_create' %}" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl {% if request.resolver_match.url_name == 'property_create' %}bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>Add Listing</span>
+            </a>
+
+            {% if request.user.is_platform_admin %}
+            <div class="px-2 pb-1 pt-6 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Governance</div>
+            
+            {% if request.resolver_match.url_name == 'admin_overview' or request.resolver_match.url_name == 'admin_queue' or request.resolver_match.url_name == 'admin_agents' or request.resolver_match.url_name == 'admin_users' or request.resolver_match.url_name == 'admin_amenities' or request.resolver_match.url_name == 'admin_areas' %}
+                <div class="bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 overflow-hidden mb-2">
+                    <button type="button" id="adminModerationToggle" class="w-full flex items-center justify-between px-3 py-2.5 bg-white dark:bg-slate-800/80 text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-800/80 shadow-sm transition">
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            <span class="font-bold text-[11px] uppercase tracking-wide">Admin Moderation</span>
+                        </div>
+                        <svg id="adminModerationArrow" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500 transform rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <!-- Sub-menu rendered by admin_overview.html -->
+                    <div id="adminModerationSubmenu" class="py-1.5 px-1.5 space-y-0.5 transition-all">
+                        {% block admin_sidebar_links %}{% endblock %}
+                    </div>
+                </div>
+            {% else %}
+                <a href="{% url 'admin_overview' %}" 
+                   class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     <span>Admin Moderation</span>
+                    <svg class="w-3.5 h-3.5 ml-auto opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </a>
-                {% endif %}
-                {% if request.user.role == 'AGENT' %}
-                <a href="/agents/{{ request.user.id }}/" target="_blank"
-                   class="px-3 py-2 flex items-center space-x-1.5 flex-shrink-0 text-slate-500 hover:text-emerald-500 dark:text-slate-400 transition sm:ml-auto">
-                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                    <span>Public Showcase Profile &rarr;</span>
-                </a>
-                {% endif %}
+            {% endif %}
+            {% endif %}
+
+            {% if request.user.role == 'AGENT' %}
+            <div class="px-2 pb-1 pt-6 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Public Access</div>
+            <a href="/agents/{{ request.user.id }}/" target="_blank"
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-emerald-500 dark:text-slate-400 transition">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                <span>Showcase Profile &rarr;</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <!-- User Profile (Bottom of sidebar) -->
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center font-extrabold text-xs text-white shadow-sm flex-shrink-0">
+                    {{ request.user.first_name|slice:":1"|default:request.user.username|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|default:""|upper }}
+                </div>
+                <div class="overflow-hidden">
+                    <div class="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {{ request.user.get_full_name|default:request.user.username }}
+                    </div>
+                    <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 inline-block mt-0.5">
+                        {% if request.user.role == 'AGENT' %}Licensed Agent{% else %}Admin{% endif %}
+                    </span>
+                </div>
             </div>
         </div>
-    </header>
+    </aside>
 
-    <!-- Main Dashboard Viewport -->
-    <main class="flex-grow">
-        {% block dashboard_content %}{% endblock %}
-    </main>
-
-    <!-- Enterprise Footer -->
-    <footer class="border-t border-slate-200 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/50 py-4 px-4 sm:px-6 lg:px-8 text-[11px] text-slate-500 dark:text-slate-400">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span>PropScope Geospatial Real Estate & Spatial Intelligence Platform</span>
-            <div class="flex items-center space-x-4">
-                <span>PostGIS 3.4 GiST Indexed</span>
-                <span>•</span>
-                <a href="/api/docs/swagger/" target="_blank" class="hover:text-emerald-500 transition">API Documentation</a>
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="flex-1 flex flex-col min-w-0">
+        
+        <!-- TOP HEADER -->
+        <header class="h-16 border-b border-slate-200/90 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-30 transition-colors">
+            
+            <div class="flex items-center space-x-2">
+                <!-- Mobile Navigation Info -->
+                <p class="text-[11px] font-bold text-slate-400 dark:text-slate-500 tracking-wide uppercase">Asset Management & Portfolio Telemetry</p>
             </div>
-        </div>
-    </footer>
+            
+            <!-- Right Actions: Switch to Map, Theme Switcher, Logout -->
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <!-- Return to Public Discovery Map -->
+                <a href="{% url 'home' %}" 
+                   title="Return to Public Map"
+                   class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition border border-slate-200/80 dark:border-slate-700/80">
+                    <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                    <span class="hidden sm:inline">Market Viewport</span>
+                </a>
+
+                <!-- Theme Switcher -->
+                <button id="themeToggleBtn" type="button" aria-label="Toggle theme" title="Toggle Theme"
+                        class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shadow-sm border border-slate-200/80 dark:border-slate-700/60">
+                    <svg id="themeIconSun" class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <svg id="themeIconMoon" class="w-4 h-4 block dark:hidden text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+
+                <!-- Logout Button -->
+                <button id="dashboardLogoutBtn" type="button" title="Sign Out"
+                        class="p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition ml-2 border-l border-slate-200 dark:border-slate-800 pl-4">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Viewport -->
+        <main class="flex-grow">
+            {% block dashboard_content %}{% endblock %}
+        </main>
+
+        <!-- Enterprise Footer -->
+        <footer class="border-t border-slate-200 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/50 py-4 px-4 sm:px-6 lg:px-8 text-[11px] text-slate-500 dark:text-slate-400">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <span>PropScope Geospatial Real Estate & Spatial Intelligence Platform</span>
+                <div class="flex items-center space-x-4">
+                    <span>PostGIS 3.4 GiST Indexed</span>
+                    <span>•</span>
+                    <a href="/api/docs/swagger/" target="_blank" class="hover:text-emerald-500 transition">API Documentation</a>
+                </div>
+            </div>
+        </footer>
+    </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Logout functionality
         const dashboardLogoutBtn = document.getElementById('dashboardLogoutBtn');
         if (dashboardLogoutBtn) {
             dashboardLogoutBtn.addEventListener('click', async () => {
@@ -138,6 +178,21 @@
                     console.warn('Logout notification:', e);
                 } finally {
                     window.location.href = '/';
+                }
+            });
+        }
+        
+        // Admin Sidebar Accordion Toggle
+        const adminToggle = document.getElementById('adminModerationToggle');
+        const adminSubmenu = document.getElementById('adminModerationSubmenu');
+        const adminArrow = document.getElementById('adminModerationArrow');
+        
+        if (adminToggle && adminSubmenu) {
+            adminToggle.addEventListener('click', () => {
+                adminSubmenu.classList.toggle('hidden');
+                if (adminArrow) {
+                    // When visible, arrow is rotated 180deg. When hidden, it's 0deg.
+                    adminArrow.classList.toggle('rotate-180');
                 }
             });
         }

@@ -1,0 +1,148 @@
+{% extends 'layouts/admin_base.html' %}
+
+{% block admin_content %}
+<div class="space-y-4">
+    <h2 class="text-xl font-black text-slate-800 dark:text-white">Agent RERA Registry</h2>
+    <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-2">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Compliance Filter:</span>
+            <button class="agent-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm transition" data-verified="">All Agents</button>
+            <button class="agent-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-verified="true">Verified Only</button>
+            <button class="agent-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-verified="false">Pending</button>
+        </div>
+        <div class="relative w-full sm:w-64">
+            <input type="text" id="agentSearchInput" placeholder="Search agent, agency, license..."
+                   class="w-full pl-9 pr-4 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition">
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                    <tr>
+                        <th class="px-5 py-4">Agent Identity</th>
+                        <th class="px-5 py-4">Agency Mandate</th>
+                        <th class="px-5 py-4">WB-RERA License</th>
+                        <th class="px-5 py-4">Active Assets</th>
+                        <th class="px-5 py-4">Accreditation Status</th>
+                        <th class="px-5 py-4 text-right">Regulatory Action</th>
+                    </tr>
+                </thead>
+                <tbody id="agentRosterTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400 font-semibold">Loading agent compliance records...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentVerifiedFilter = '';
+
+    async function loadAgentRoster() {
+        const tbody = document.getElementById('agentRosterTableBody');
+        if(!tbody) return;
+        const query = document.getElementById('agentSearchInput').value.trim();
+
+        try {
+            let url = `/api/v1/properties/admin/moderation/agents/`;
+            const params = new URLSearchParams();
+            if (currentVerifiedFilter !== '') params.append('is_verified', currentVerifiedFilter);
+            if (query) params.append('search', query);
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+
+            const res = await window.apiClient(url);
+            const agents = res.results || [];
+
+            if (agents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">No agent records found matching the criteria.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = agents.map(a => {
+                const verifiedBadge = a.is_verified ?
+                    `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">Verified</span>` :
+                    `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">Pending Review</span>`;
+
+                const toggleBtn = a.is_verified ?
+                    `<button onclick="window.toggleAgentVerification(${a.id})" class="px-2.5 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 text-[11px] font-bold transition">Revoke</button>` :
+                    `<button onclick="window.toggleAgentVerification(${a.id})" class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm text-[11px] font-bold transition">Verify Agent</button>`;
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                        <td class="px-5 py-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs">${(a.email || 'A').charAt(0).toUpperCase()}</div>
+                                <div>
+                                    <div class="font-bold text-xs text-slate-900 dark:text-white">${a.agency_name || a.full_name || 'Independent Broker'}</div>
+                                    <div class="text-[10px] text-slate-400">${a.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-4 text-xs font-semibold">${a.agency_name || '-'}</td>
+                        <td class="px-5 py-4 text-[11px] font-mono text-slate-600 dark:text-slate-400">${a.license_number || 'Unregistered'}</td>
+                        <td class="px-5 py-4">
+                            <div class="text-xs font-bold text-slate-800 dark:text-slate-200">${a.listings_count || 0} properties</div>
+                        </td>
+                        <td class="px-5 py-4">${verifiedBadge}</td>
+                        <td class="px-5 py-4 text-right">
+                            <div class="flex items-center justify-end space-x-2">
+                                <a href="/agents/${a.id}/" target="_blank"
+                                   class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold transition">
+                                    Portfolio
+                                </a>
+                                ${toggleBtn}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-rose-500 font-bold text-xs">Error loading agent roster.</td></tr>`;
+        }
+    }
+
+    // Toggle Agent Verification
+    window.toggleAgentVerification = async function(agentId) {
+        try {
+            const res = await window.apiClient(`/api/v1/properties/admin/moderation/agents/${agentId}/verify/`, {
+                method: 'POST'
+            });
+
+            window.showAdminToast(res.message || 'Agent verification updated.', true);
+            loadAgentRoster();
+        } catch (err) {
+            window.showAdminToast('Failed to update agent verification.', false);
+        }
+    };
+
+    // Filters and search
+    document.querySelectorAll('.agent-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.agent-filter-btn').forEach(b => {
+                b.className = 'agent-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition';
+            });
+            btn.className = 'agent-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm transition';
+            currentVerifiedFilter = btn.dataset.verified;
+            loadAgentRoster();
+        });
+    });
+
+    let debounceTimer;
+    document.getElementById('agentSearchInput').addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(loadAgentRoster, 300);
+    });
+
+    // Init
+    loadAgentRoster();
+});
+</script>
+{% endblock %}

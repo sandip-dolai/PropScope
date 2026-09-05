@@ -1,0 +1,128 @@
+{% extends 'layouts/admin_base.html' %}
+
+{% block admin_content %}
+<!-- Executive Governance Hero -->
+<div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 p-6 sm:p-8 text-white shadow-xl">
+    <div class="absolute -top-24 -right-24 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2.5 mb-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-[11px] font-extrabold uppercase tracking-widest text-emerald-400">
+                    Platform Governance & Regulatory Moderation
+                </span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                Metropolitan Asset Moderation & Audit Console
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-300 max-w-3xl mt-1 leading-relaxed">
+                Review and audit inbound spatial property submissions across the Kolkata-Barasat corridor, enforce West Bengal RERA regulatory accreditations, and supervise metropolitan inventory integrity.
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-3 flex-shrink-0 pt-2 md:pt-0">
+            <button id="refreshAdminDataBtn" type="button"
+                    class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold transition flex items-center space-x-2 shadow-sm">
+                <svg id="refreshSpinner" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Refresh Telemetry</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 5-KPI Platform Governance Strip -->
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+    <!-- KPI 1: Pending Queue -->
+    <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Pending Approvals</span>
+            <span id="pendingBadgePill" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Queue</span>
+        </div>
+        <div class="text-3xl font-black text-slate-900 dark:text-white mt-2" id="kpiPendingCount">--</div>
+        <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">Awaiting audit</div>
+    </div>
+
+    <!-- KPI 2: Active Market Listings -->
+    <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Active Listings</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        </div>
+        <div class="text-3xl font-black text-slate-900 dark:text-white mt-2" id="kpiActiveCount">--</div>
+        <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">Published live</div>
+    </div>
+
+    <!-- KPI 3: Total Platform AUM -->
+    <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Asset AUM</span>
+            <span class="text-[10px] font-bold text-slate-400">INR</span>
+        </div>
+        <div class="text-3xl font-black text-slate-900 dark:text-white mt-2" id="kpiTotalAum">₹-- Cr</div>
+        <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">Market valuation</div>
+    </div>
+
+    <!-- KPI 4: Registered Agents -->
+    <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Brokers & Agents</span>
+            <span class="text-slate-400 text-xs">👥</span>
+        </div>
+        <div class="text-3xl font-black text-slate-900 dark:text-white mt-2" id="kpiTotalAgents">--</div>
+        <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
+            <span id="kpiVerifiedAgents">--</span> verified
+        </div>
+    </div>
+
+    <!-- KPI 5: WB-RERA Compliance -->
+    <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm col-span-2 lg:col-span-1">
+        <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">RERA Compliance</span>
+            <span class="text-emerald-500 text-xs">✓</span>
+        </div>
+        <div class="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-2" id="kpiCompliancePct">--%</div>
+        <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">Accreditation rate</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    async function loadTelemetry() {
+        try {
+            const data = await window.apiClient('/api/v1/properties/admin/moderation/stats/');
+            document.getElementById('kpiPendingCount').textContent = data.pending_properties;
+            document.getElementById('kpiActiveCount').textContent = data.active_properties;
+            document.getElementById('kpiTotalAum').textContent = `₹${data.total_aum_crores} Cr`;
+            document.getElementById('kpiTotalAgents').textContent = data.total_agents;
+            document.getElementById('kpiVerifiedAgents').textContent = data.verified_agents;
+            document.getElementById('kpiCompliancePct').textContent = `${data.compliance_percentage}%`;
+            
+            const pill = document.getElementById('pendingBadgePill');
+            if (data.pending_properties > 0) {
+                pill.className = 'px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse';
+                pill.textContent = `${data.pending_properties} New`;
+            } else {
+                pill.className = 'px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+                pill.textContent = 'Cleared';
+            }
+        } catch (err) {
+            console.error('Failed to load telemetry', err);
+        }
+    }
+
+    const refreshBtn = document.getElementById('refreshAdminDataBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            loadTelemetry();
+            window.showAdminToast('Telemetry synchronized.', true);
+        });
+    }
+
+    loadTelemetry();
+});
+</script>
+{% endblock %}

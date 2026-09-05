@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from apps.recommendations.explainer import RecommendationExplainer
 
 # Canonical preference dimension names
 DIMENSION_BUDGET = "budget"
@@ -276,7 +277,10 @@ class RuleBasedRecommendation(RecommendationStrategy):
 
         # Rank descending by score
         scored_results.sort(key=lambda x: x["score"], reverse=True)
-        return scored_results
+
+        # Enrich each result with structured explanation (Part 6.3)
+        explainer = RecommendationExplainer(format_fn=format_inr_short)
+        return explainer.explain_all(scored_results, preferences)
 
 
 class AIRecommendation(RecommendationStrategy):
@@ -290,6 +294,7 @@ class AIRecommendation(RecommendationStrategy):
         for item in results:
             item["ai_preference_fit"] = item["score"]
             item["reasons"].append("Evaluated using AI contextual preference model")
+        # Explanations already applied by RuleBasedRecommendation
         return results
 
 

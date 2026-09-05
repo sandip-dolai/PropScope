@@ -1,12 +1,12 @@
 from django.contrib.gis.db.models.functions import Distance
 from .models import Amenity, AmenityCategory
-from .scoring import AmenityProximityScorer
+from .scoring import AmenityProximityScorer, DeterministicLocationScoreCalculator
 
 
 class AmenitySpatialService:
     """
     Handles PostGIS nearest-neighbor (KNN) and spatial distance calculations
-    between properties and amenities.
+    between properties and amenities, and calculates deterministic location scores.
     """
 
     @staticmethod
@@ -51,15 +51,46 @@ class AmenitySpatialService:
         return nearest_results
 
     @classmethod
-    def get_nearest_amenities_for_property(cls, property_obj, enrich_with_scores=True):
+    def calculate_location_score_for_point(cls, point, custom_weights=None):
         """
-        Finds the closest amenity per category for a given Property instance.
+        Computes the deterministic composite location score (0-100) and pillar breakdown
+        for a given GEOS Point.
+        """
+        nearest_amenities = cls.get_nearest_amenities_for_point(point, enrich_with_scores=True)
+        calculator = DeterministicLocationScoreCalculator()
+        return calculator.calculate(nearest_amenities, custom_weights=custom_weights)
+
+    @classmethod
+    def calculate_location_score_for_property(cls, property_obj, custom_weights=None):
+        """
+        Computes the deterministic composite location score for a Property instance.
+        """
+        score_data = cls.calculate_location_score_for_point(
+            property_obj.location,
+            custom_weights=custom_weights
+        )
+        return {
+            "property_id": property_obj.id,
+            "property_title": property_obj.title,
+            "location": {
+                "lat": property_obj.latitude,
+                "lng": property_obj.longitude
+            },
+            **score_data
+        }
+
+    @classmethod
+    def get_nearest_amenities_for_property(cls, property_obj, enrich_with_scores=True, include_location_score=True):
+        """
+        Finds the closest amenity per category for a given Property instance,
+        optionally including composite location score intelligence.
         """
         nearest_amenities = cls.get_nearest_amenities_for_point(
             property_obj.location,
             enrich_with_scores=enrich_with_scores
         )
-        return {
+
+        response = {
             "property_id": property_obj.id,
             "property_title": property_obj.title,
             "property_location": {
@@ -69,3 +100,8 @@ class AmenitySpatialService:
             "nearest_amenities": nearest_amenities
         }
 
+        if include_location_score:
+            calculator = DeterministicLocationScoreCalculator()
+            response["location_score"] = calculator.calculate(nearest_amenities)
+
+        return response

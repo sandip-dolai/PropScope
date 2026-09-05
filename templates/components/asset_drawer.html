@@ -100,6 +100,35 @@
             </div>
         </div>
 
+        <!-- Deterministic Location Intelligence Score -->
+        <div id="drawerLocationScoreCard" class="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-emerald-500/10 border border-indigo-500/20 space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-indigo-500/20"></span>
+                    <div>
+                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                            Location Intelligence Score
+                        </h4>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Weighted composite index across 5 lifestyle pillars</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="flex items-baseline space-x-1 justify-end">
+                        <span id="drawerCompositeScoreVal" class="text-xl font-black text-indigo-600 dark:text-indigo-400">--</span>
+                        <span class="text-[11px] font-bold text-slate-400">/100</span>
+                    </div>
+                    <span id="drawerCompositeRating" class="inline-block px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
+                        Calculating...
+                    </span>
+                </div>
+            </div>
+
+            <!-- Pillar Progress Bars (Transport 30%, Healthcare 20%, Education 20%, Shopping 15%, Recreation 15%) -->
+            <div id="drawerPillarsGrid" class="space-y-2 pt-1 border-t border-indigo-500/10">
+                <div class="py-2 text-center text-slate-400 text-xs">Loading location telemetry...</div>
+            </div>
+        </div>
+
         <!-- Nearby Transit & Civic Amenities -->
         <div>
             <div class="flex items-center justify-between mb-3">
@@ -314,6 +343,70 @@
             if (!initialPropData && data.property_location) {
                 document.getElementById('drawerAssetTitle').textContent = data.property_title;
                 activePropertyCoords = [data.property_location.lat, data.property_location.lng];
+            }
+
+            // Populate Location Intelligence Score & Pillars
+            if (data.location_score) {
+                const ls = data.location_score;
+                const scoreValEl = document.getElementById('drawerCompositeScoreVal');
+                const ratingEl = document.getElementById('drawerCompositeRating');
+                const pillarsGridEl = document.getElementById('drawerPillarsGrid');
+
+                if (scoreValEl) scoreValEl.textContent = ls.composite_score;
+                if (ratingEl) {
+                    ratingEl.textContent = ls.rating;
+                    if (ls.composite_score >= 85) {
+                        ratingEl.className = 'inline-block px-2.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30';
+                    } else if (ls.composite_score >= 70) {
+                        ratingEl.className = 'inline-block px-2.5 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30';
+                    } else if (ls.composite_score >= 55) {
+                        ratingEl.className = 'inline-block px-2.5 py-0.5 rounded-full text-[9px] font-extrabold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30';
+                    } else {
+                        ratingEl.className = 'inline-block px-2.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30';
+                    }
+                }
+
+                if (pillarsGridEl && ls.breakdown) {
+                    const pillarIcons = {
+                        'Transport': '🚆',
+                        'Healthcare': '🏥',
+                        'Education': '🎓',
+                        'Shopping': '🛍️',
+                        'Recreation': '🌳'
+                    };
+                    const pillarColors = {
+                        'Transport': 'from-blue-500 to-indigo-500',
+                        'Healthcare': 'from-rose-500 to-red-500',
+                        'Education': 'from-amber-500 to-orange-500',
+                        'Shopping': 'from-fuchsia-500 to-purple-500',
+                        'Recreation': 'from-emerald-500 to-teal-500'
+                    };
+
+                    pillarsGridEl.innerHTML = Object.entries(ls.breakdown).map(([pillar, info]) => {
+                        const icon = pillarIcons[pillar] || '📍';
+                        const barColor = pillarColors[pillar] || 'from-indigo-500 to-emerald-500';
+                        const distText = info.distance_km !== null ? `${info.distance_km} km` : 'Distant';
+                        return `
+                            <div class="space-y-1">
+                                <div class="flex items-center justify-between text-[11px]">
+                                    <span class="font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
+                                        <span>${icon}</span>
+                                        <span>${pillar}</span>
+                                        <span class="text-[9px] font-normal text-slate-400">(${info.weight_percentage}%)</span>
+                                    </span>
+                                    <div class="flex items-center space-x-1.5">
+                                        <span class="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[110px]" title="${info.amenity_name}">${info.amenity_name}</span>
+                                        <span class="text-[10px] font-mono text-slate-400">(${distText})</span>
+                                        <span class="font-black text-slate-900 dark:text-white font-mono text-[11px]">${Math.round(info.score)}%</span>
+                                    </div>
+                                </div>
+                                <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r ${barColor} rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.max(5, info.score))}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
             }
 
             const propLat = data.property_location.lat;

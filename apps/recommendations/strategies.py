@@ -29,8 +29,15 @@ class RuleBasedRecommendation(RecommendationStrategy):
             diff = abs(prop.bedrooms - desired_bedrooms)
             bedroom_score = max(0.0, 100.0 - (diff * 25.0))
 
-            # 3. Base Location Score
-            location_score = 80.0  # Will be dynamically calculated with amenities in Phase 3/4
+            # 3. Deterministic Location Score
+            try:
+                from apps.amenities.services import AmenitySpatialService
+                location_data = AmenitySpatialService.calculate_location_score_for_property(prop)
+                location_score = float(location_data.get("composite_score", 80.0))
+                location_rating = location_data.get("rating", "Standard Accessibility")
+            except Exception:
+                location_score = 80.0
+                location_rating = "Standard Accessibility"
 
             final_score = round(
                 (budget_score * 0.40) +
@@ -45,10 +52,13 @@ class RuleBasedRecommendation(RecommendationStrategy):
                 "price": price,
                 "bedrooms": prop.bedrooms,
                 "normal_score": final_score,
+                "location_score": location_score,
+                "location_rating": location_rating,
                 "score": final_score,
                 "reasons": [
                     f"Budget fit score: {round(budget_score, 1)}%",
                     f"Bedroom alignment: {prop.bedrooms} BHK",
+                    f"Location score: {location_score}% ({location_rating})",
                 ]
             })
 

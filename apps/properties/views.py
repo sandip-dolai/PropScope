@@ -161,6 +161,46 @@ class PropertyNearestAmenitiesView(APIView):
         return Response(data)
 
 
+class PropertyLocationScoreView(APIView):
+    """
+    Computes and returns the deterministic composite location score (0-100)
+    for a given property across the 5 lifestyle pillars:
+    - Transport (30%)
+    - Healthcare (20%)
+    - Education (20%)
+    - Shopping (15%)
+    - Recreation (15%)
+    Supports custom runtime weight overrides via query parameters.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        try:
+            property_obj = Property.objects.get(pk=pk)
+        except Property.DoesNotExist:
+            return Response(
+                {"error": f"Property with id {pk} not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Parse optional custom weights from query params
+        custom_weights = {}
+        for param in ["transport", "healthcare", "education", "shopping", "recreation"]:
+            val = request.query_params.get(param)
+            if val is not None:
+                try:
+                    custom_weights[param.capitalize()] = float(val)
+                except ValueError:
+                    pass
+
+        from apps.amenities.services import AmenitySpatialService
+        data = AmenitySpatialService.calculate_location_score_for_property(
+            property_obj,
+            custom_weights=custom_weights if custom_weights else None
+        )
+        return Response(data)
+
+
 class AgentInventoryAPIView(APIView):
     """
     High-density asset inventory management API for licensed agents and platform administrators.

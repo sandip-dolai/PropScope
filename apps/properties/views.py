@@ -642,9 +642,13 @@ class AreaAnalyticsAPIView(APIView):
             location__contained=bbox_polygon
         )
         
-        from django.db.models import Avg, Count, Max, Min
+        from django.db.models import Avg, Count, Max, Min, F, FloatField, ExpressionWrapper
         
-        stats = properties.aggregate(
+        properties_annotated = properties.annotate(
+            price_sqft=ExpressionWrapper(F('price') / F('area_sqft'), output_field=FloatField())
+        )
+
+        stats = properties_annotated.aggregate(
             total_properties=Count('id'),
             avg_price=Avg('price'),
             min_price=Min('price'),
@@ -663,7 +667,7 @@ class AreaAnalyticsAPIView(APIView):
             prices.sort()
             n = len(prices)
             if n % 2 == 0:
-                median_price = float((prices[n//2 - 1] + prices[n//2]) / 2.0)
+                median_price = (float(prices[n//2 - 1]) + float(prices[n//2])) / 2.0
             else:
                 median_price = float(prices[n//2])
 

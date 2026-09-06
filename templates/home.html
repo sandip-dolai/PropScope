@@ -27,24 +27,43 @@
                          Kolkata Region
                      </h1>
                  </div>
-                 <button id="closeSidebarMobileBtn" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 bg-slate-100">
-                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                 </button>
+                 <div class="flex items-center space-x-2">
+                     <button id="toggleSidebarFiltersBtn" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 bg-slate-100 dark:bg-slate-800 dark:text-slate-500 dark:hover:text-slate-200 transition" title="Toggle Filters">
+                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                     </button>
+                     <button id="closeSidebarMobileBtn" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 bg-slate-100 dark:bg-slate-800 dark:hover:text-slate-200 transition">
+                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                     </button>
+                 </div>
              </div>
              
              <!-- Filter Toolbar inside sidebar -->
-             <div class="space-y-3">
-                  <!-- Config -->
-                  <div class="flex flex-wrap items-center gap-1.5">
-                      <button class="bhk-filter-btn active px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition" data-bhk="">All</button>
-                      <button class="bhk-filter-btn px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200" data-bhk="1">1 BHK</button>
-                      <button class="bhk-filter-btn px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200" data-bhk="2">2 BHK</button>
-                      <button class="bhk-filter-btn px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200" data-bhk="3">3 BHK</button>
-                      <button class="bhk-filter-btn px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200" data-bhk="4">4+</button>
+             <div id="sidebarFilterPanel" class="space-y-3 transition-all duration-300 origin-top">
+                  <!-- Configuration & Property Type -->
+                  <div class="flex items-center gap-2">
+                      <select id="bhkSelect" class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-[10px] font-bold rounded-lg px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 focus:outline-none flex-1 shadow-sm">
+                          <option value="">All BHK</option>
+                          <option value="1">1 BHK</option>
+                          <option value="2">2 BHK</option>
+                          <option value="3">3 BHK</option>
+                          <option value="4">4+ BHK</option>
+                      </select>
+                      
+                      <select id="propertyTypeSelect" class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-[10px] font-bold rounded-lg px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 focus:outline-none flex-1 shadow-sm">
+                          <option value="">All Types</option>
+                          <option value="APARTMENT">Apartment</option>
+                          <option value="VILLA">Villa</option>
+                          <option value="PLOT">Plot</option>
+                          <option value="COMMERCIAL">Commercial</option>
+                      </select>
+                      
+                      <button id="resetFiltersBtn" class="bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 text-[10px] font-bold rounded-lg px-3 py-1.5 border border-rose-200 dark:border-rose-500/20 shadow-sm transition" title="Clear Filters">
+                          Reset
+                      </button>
                   </div>
                   <!-- Neighborhood & Amenities -->
                   <div class="flex items-center space-x-2">
-                      <select id="neighborhoodSelect" class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg px-2.5 py-2 border border-slate-200 focus:outline-none flex-1 truncate shadow-sm">
+                      <select id="neighborhoodSelect" class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg px-2.5 py-2 border border-slate-200 dark:border-slate-700 focus:outline-none flex-1 truncate shadow-sm">
                           <option value="">All Locations</option>
                       </select>
                       <label class="inline-flex items-center cursor-pointer bg-slate-50 dark:bg-slate-800 px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -263,6 +282,14 @@
         const resultsCountText = document.getElementById('resultsCountText');
         const toggleAmenities = document.getElementById('toggleAmenities');
         const neighborhoodSelect = document.getElementById('neighborhoodSelect');
+        
+        const bhkSelect = document.getElementById('bhkSelect');
+        const propertyTypeSelect = document.getElementById('propertyTypeSelect');
+        const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+        const toggleSidebarFiltersBtn = document.getElementById('toggleSidebarFiltersBtn');
+        const sidebarFilterPanel = document.getElementById('sidebarFilterPanel');
+        
+        let activePropertyTypeFilter = "";
 
         // Radius slider input
         radiusSlider.addEventListener('input', (e) => {
@@ -273,6 +300,49 @@
                 performRadiusSearch(latlng.lat, latlng.lng, e.target.value);
             }
         });
+
+        // Filter Dropdowns
+        if (bhkSelect) {
+            bhkSelect.addEventListener('change', (e) => {
+                activeBhkFilter = e.target.value;
+                renderPropertyCards(currentProperties);
+            });
+        }
+        
+        if (propertyTypeSelect) {
+            propertyTypeSelect.addEventListener('change', (e) => {
+                activePropertyTypeFilter = e.target.value;
+                renderPropertyCards(currentProperties);
+            });
+        }
+
+        // Reset Filters Button
+        if (resetFiltersBtn) {
+            resetFiltersBtn.addEventListener('click', () => {
+                bhkSelect.value = "";
+                propertyTypeSelect.value = "";
+                activeBhkFilter = "";
+                activePropertyTypeFilter = "";
+                neighborhoodSelect.value = "";
+                
+                if (searchPin) map.removeLayer(searchPin);
+                if (searchCircle) map.removeLayer(searchCircle);
+                drawnItems.clearLayers();
+                searchPin = null; searchCircle = null;
+                radiusSlider.value = 5;
+                radiusValue.textContent = '5.0 km';
+                activeSpatialState = { mode: 'all', params: {}, summary: 'Global Metropolitan Corridor' };
+                
+                loadProperties('/api/v1/properties/');
+            });
+        }
+
+        // Toggle Sidebar Filters
+        if (toggleSidebarFiltersBtn && sidebarFilterPanel) {
+            toggleSidebarFiltersBtn.addEventListener('click', () => {
+                sidebarFilterPanel.classList.toggle('hidden');
+            });
+        }
 
         // Format Indian Rupee currency (Lakhs / Crores)
         function formatINR(price) {
@@ -287,9 +357,45 @@
 
         // Render Property Cards in Grid
         function renderPropertyCards(props) {
-            const filtered = activeBhkFilter 
-                ? props.filter(p => activeBhkFilter === '4' ? p.bedrooms >= 4 : p.bedrooms === Number(activeBhkFilter))
-                : props;
+            let filtered = props;
+            if (activeBhkFilter) {
+                filtered = filtered.filter(p => activeBhkFilter === '4' ? p.bedrooms >= 4 : p.bedrooms === Number(activeBhkFilter));
+            }
+            if (activePropertyTypeFilter) {
+                filtered = filtered.filter(p => p.property_type === activePropertyTypeFilter);
+            }
+
+            propertyLayer.clearLayers();
+            filtered.forEach(prop => {
+                if (prop.lat && prop.lng) {
+                    const customIcon = L.divIcon({
+                        className: 'bg-transparent',
+                        html: `
+                            <div class="w-8 h-8 rounded-full bg-emerald-600 border-2 border-white dark:border-slate-900 text-white font-black text-[10px] flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                                ${prop.bedrooms}B
+                            </div>
+                        `,
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    });
+
+                    const marker = L.marker([prop.lat, prop.lng], { icon: customIcon }).addTo(propertyLayer);
+                    marker.propertyId = prop.id;
+                    marker.bindPopup(`
+                        <div class="font-sans text-xs min-w-[210px] p-1">
+                            <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold uppercase text-[9px]">${prop.property_type}</span>
+                            <h4 class="font-bold text-sm text-slate-900 mt-1 mb-0.5">${prop.title}</h4>
+                            <p class="font-black text-emerald-600 text-sm mb-1">${formatINR(prop.price)}</p>
+                            <p class="text-slate-600 font-medium">${prop.bedrooms} BHK • ${prop.area_sqft} sqft (₹${prop.price_per_sqft}/sqft)</p>
+                            <p class="text-slate-400 text-[10px] mt-1 border-t border-slate-200 pt-1">${prop.address}</p>
+                            <button onclick="window.inspectPropertyProximity(${prop.id})" class="mt-2 w-full py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition flex items-center justify-center space-x-1 shadow-sm">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path></svg>
+                                <span>View Details & Proximity</span>
+                            </button>
+                        </div>
+                    `);
+                }
+            });
 
             resultsCountText.textContent = `${filtered.length} Assets Active`;
 
@@ -365,9 +471,9 @@
                         window.leafletMapInstance.flyTo([lat, lng], 16, { duration: 1.2 });
                     }
 
-                    // Open popup and drawer
-                    if (window.openAssetDrawer) {
-                        window.openAssetDrawer(id);
+                    // Open popup and drawer with full data
+                    if (window.inspectPropertyProximity) {
+                        window.inspectPropertyProximity(id);
                     }
                 });
             });
@@ -394,40 +500,8 @@
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
-                    propertyLayer.clearLayers();
                     const results = data.results || data;
                     currentProperties = Array.isArray(results) ? results : [];
-
-                    currentProperties.forEach(prop => {
-                        if (prop.lat && prop.lng) {
-                            const customIcon = L.divIcon({
-                                className: 'bg-transparent',
-                                html: `
-                                    <div class="w-8 h-8 rounded-full bg-emerald-600 border-2 border-white dark:border-slate-900 text-white font-black text-[10px] flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-                                        ${prop.bedrooms}B
-                                    </div>
-                                `,
-                                iconSize: [32, 32],
-                                iconAnchor: [16, 16]
-                            });
-
-                            const marker = L.marker([prop.lat, prop.lng], { icon: customIcon }).addTo(propertyLayer);
-                            marker.propertyId = prop.id;
-                            marker.bindPopup(`
-                                <div class="font-sans text-xs min-w-[210px] p-1">
-                                    <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold uppercase text-[9px]">${prop.property_type}</span>
-                                    <h4 class="font-bold text-sm text-slate-900 mt-1 mb-0.5">${prop.title}</h4>
-                                    <p class="font-black text-emerald-600 text-sm mb-1">${formatINR(prop.price)}</p>
-                                    <p class="text-slate-600 font-medium">${prop.bedrooms} BHK • ${prop.area_sqft} sqft (₹${prop.price_per_sqft}/sqft)</p>
-                                    <p class="text-slate-400 text-[10px] mt-1 border-t border-slate-200 pt-1">${prop.address}</p>
-                                    <button onclick="window.inspectPropertyProximity(${prop.id})" class="mt-2 w-full py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition flex items-center justify-center space-x-1 shadow-sm">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path></svg>
-                                        <span>View Details & Proximity</span>
-                                    </button>
-                                </div>
-                            `);
-                        }
-                    });
 
                     renderPropertyCards(currentProperties);
                 })
@@ -1487,8 +1561,8 @@
                         const heatPoints = propertiesData.results.map(p => {
                             const price = p.price || 0;
                             const weight = Math.min(1.0, (price / 10000000) * 0.8 + 0.2); 
-                            return [p.location.coordinates[1], p.location.coordinates[0], weight];
-                        });
+                            return [p.lat, p.lng, weight];
+                        }).filter(point => point[0] !== undefined && point[1] !== undefined);
 
                         // Verify leaflet heat is loaded
                         if (typeof L.heatLayer === 'function') {

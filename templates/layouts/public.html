@@ -5,12 +5,14 @@
     {% include 'components/navbar.html' %}
 
     <!-- Main Public Content Viewport -->
-    <main class="flex-grow">
+    <main class="{% block main_class %}flex-grow{% endblock %}">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Public Institutional Footer Component -->
+    {% block footer %}
     {% include 'components/footer.html' %}
+    {% endblock %}
 
     <!-- Global Dual-Tab Authentication & Demo Modal -->
     {% include 'components/auth_modal.html' %}

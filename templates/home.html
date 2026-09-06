@@ -1,255 +1,186 @@
 {% extends 'layouts/public.html' %}
 
+{% block main_class %}flex h-[calc(100vh-64px)] overflow-hidden{% endblock %}
+{% block footer %}{% endblock %}
+
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
-    <!-- Platform Hero & Status Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 pb-6 border-b border-slate-200/80 dark:border-slate-800/80 gap-4">
-        <div>
-            <div class="flex items-center space-x-2.5 mb-1.5">
-                <span class="text-[11px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                    {% if request.user.role == 'AGENT' %}Listing Management Hub
-                    {% elif request.user.role == 'ADMIN' %}Platform Overview
-                    {% else %}Property Explorer{% endif %}
-                </span>
-                <span class="text-xs text-slate-400 dark:text-slate-500">•</span>
-                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Kolkata · Barasat Metropolitan Region</span>
-            </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {% if request.user.role == 'AGENT' %}Your Active Listings & Market Coverage
-                {% elif request.user.role == 'ADMIN' %}Live Property Market Overview
-                {% else %}Find Your Next Property in Kolkata & Barasat{% endif %}
-            </h1>
-            <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-3xl mt-1 leading-relaxed">
-                Browse verified apartments, villas, and plots with real-time proximity data and neighbourhood filters.
-            </p>
+<div class="flex flex-col lg:flex-row w-full h-full relative">
+
+    <!-- Mobile Sidebar Toggle (Floating) -->
+    <button id="mobileSidebarToggleBtn" class="lg:hidden absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[2000] bg-slate-900 dark:bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-full shadow-2xl text-xs flex items-center space-x-2 border border-slate-700 dark:border-emerald-400">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <span>Listings & Filters</span>
+    </button>
+
+    <!-- LEFT SIDEBAR -->
+    <div id="sidebarContainer" class="hidden lg:flex w-full lg:w-[380px] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col h-full z-[1000] absolute lg:relative transform transition-transform duration-300">
+        <!-- Sidebar Header (Hero area shrunk down) -->
+        <div class="p-4 border-b border-slate-200/80 dark:border-slate-800/80 shrink-0">
+             <div class="flex items-center justify-between mb-3">
+                 <div>
+                     <span class="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 mb-1 inline-block">
+                         {% if request.user.role == 'AGENT' %}Listing Hub
+                         {% elif request.user.role == 'ADMIN' %}Platform
+                         {% else %}Property Explorer{% endif %}
+                     </span>
+                     <h1 class="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+                         Kolkata Region
+                     </h1>
+                 </div>
+                 <button id="closeSidebarMobileBtn" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 bg-slate-100">
+                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                 </button>
+             </div>
+             
+             <!-- Filter Toolbar inside sidebar -->
+             <div class="space-y-3">
+                  <!-- Config -->
+                  <div class="flex flex-wrap items-center gap-1.5">
+                      <button class="bhk-filter-btn active px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition" data-bhk="">All</button>
+                      <button class="bhk-filter-btn px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200" data-bhk="1">1 BHK</button>
+                      <button class="bhk-filter-btn px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200" data-bhk="2">2 BHK</button>
+                      <button class="bhk-filter-btn px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200" data-bhk="3">3 BHK</button>
+                      <button class="bhk-filter-btn px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200" data-bhk="4">4+</button>
+                  </div>
+                  <!-- Neighborhood & Amenities -->
+                  <div class="flex items-center space-x-2">
+                      <select id="neighborhoodSelect" class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg px-2.5 py-2 border border-slate-200 focus:outline-none flex-1 truncate shadow-sm">
+                          <option value="">All Locations</option>
+                      </select>
+                      <label class="inline-flex items-center cursor-pointer bg-slate-50 dark:bg-slate-800 px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                          <input type="checkbox" id="toggleAmenities" class="sr-only peer">
+                          <div class="w-7 h-4 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                          <span class="ml-1.5 text-[10px] font-bold text-slate-600 dark:text-slate-300">Transit</span>
+                      </label>
+                  </div>
+                  <!-- Radius Slider -->
+                  <div class="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                      <div class="flex items-center justify-between mb-1.5">
+                          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Radius Filter</span>
+                          <span id="radiusValue" class="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">5.0 km</span>
+                      </div>
+                      <input type="range" id="radiusSlider" min="1" max="25" value="5" class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                  </div>
+                  <!-- Action Buttons -->
+                  <div class="flex space-x-2 pt-1">
+                      <button id="openSaveSearchModalBtn" type="button" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center gap-1 shadow-sm hover:bg-indigo-100 transition">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                          Save
+                      </button>
+                      <button id="openRecommendationModalBtn" type="button" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-sm flex items-center justify-center gap-1 transition">
+                          ✨ Match
+                      </button>
+                      <button id="locateMeBtn" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] rounded-lg shadow-sm flex justify-center items-center gap-1 transition">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path></svg>
+                          My Loc
+                      </button>
+                  </div>
+             </div>
         </div>
-        <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 flex-shrink-0">
-            {% if request.user.role == 'AGENT' %}
-            <a href="{% url 'property_create' %}" class="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md transition flex items-center">
-                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                List a Property
-            </a>
-            {% endif %}
-            <div id="resultsCountBadge" class="px-4 py-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center shadow-sm">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse mr-2.5"></span>
-                <span id="resultsCountText">Synchronizing properties...</span>
-            </div>
+        
+        <!-- Status Bar -->
+        <div class="px-4 py-2.5 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between shrink-0 shadow-sm z-10 relative">
+             <div class="flex items-center gap-2">
+                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                 <span id="resultsCountText" class="text-xs font-bold text-slate-800 dark:text-slate-200">Loading listings...</span>
+             </div>
+             <button id="clearSearchBtn" class="hidden text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 hover:bg-rose-100 font-bold text-[10px] transition">Reset</button>
         </div>
-    </div>
-
-    <!-- Parameter Filter Toolbar -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 mb-6 shadow-sm flex flex-wrap items-center justify-between gap-4 transition-colors">
-        <!-- Configuration Filters -->
-        <div class="flex flex-wrap items-center gap-2">
-            <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1.5">Configuration:</span>
-            <button class="bhk-filter-btn active px-3.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white shadow-sm transition" data-bhk="">All</button>
-            <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="1">1 BHK</button>
-            <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="2">2 BHK</button>
-            <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="3">3 BHK</button>
-            <button class="bhk-filter-btn px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" data-bhk="4">4+ BHK</button>
-        </div>
-
-        <!-- Neighborhood Geofence & Infrastructure Toggle -->
-        <div class="flex flex-wrap items-center gap-4">
-            <div class="flex items-center space-x-2">
-                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Neighbourhood:</span>
-                <select id="neighborhoodSelect" class="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl px-3.5 py-1.5 border border-slate-200 dark:border-slate-700/80 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-sm">
-                    <option value="">All Locations</option>
-                </select>
-            </div>
-
-            <label class="inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="toggleAmenities" class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-300 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                <span class="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">Transit & Amenities</span>
-            </label>
-
-            <!-- Save Search Trigger -->
-            <button id="openSaveSearchModalBtn" type="button"
-                    class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 transition shadow-sm flex items-center space-x-1.5">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
-                <span>Save Search</span>
-            </button>
-
-            <!-- Smart Property Match Trigger -->
-            {% if request.user.role == 'BUYER' or request.user.role == 'ADMIN' or not request.user.is_authenticated %}
-            <button id="openRecommendationModalBtn" type="button"
-                    class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-md shadow-violet-500/20 transition flex items-center space-x-1.5">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-                <span>✨ Smart Match</span>
-            </button>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Save Active Spatial Search Modal -->
-    <div id="saveSearchModalBackdrop" class="fixed inset-0 z-[2600] bg-slate-950/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-md w-full p-6 relative">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center space-x-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Save Spatial Search</h3>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Bookmark active geofence & filters</p>
-                    </div>
-                </div>
-                <button id="closeSaveSearchModalBtn" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-
-            <!-- Parameters Preview Card -->
-            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 mb-4 space-y-1.5 text-xs">
-                <div class="flex items-center justify-between">
-                    <span class="text-slate-500 text-[11px]">Search Type:</span>
-                    <span id="saveModalOperatorBadge" class="font-extrabold text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">Radius</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-slate-500 text-[11px]">Configuration:</span>
-                    <span id="saveModalBhkBadge" class="font-bold text-slate-800 dark:text-slate-200">All Configurations</span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-slate-500 text-[11px]">Boundary Details:</span>
-                    <span id="saveModalSummary" class="text-[11px] font-mono text-slate-600 dark:text-slate-400">5.0 km Buffer</span>
-                </div>
-            </div>
-
-            <form id="saveSearchForm" class="space-y-4">
-                <div>
-                    <label for="saveSearchTitleInput" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                        Search Label / Title
-                    </label>
-                    <input type="text" id="saveSearchTitleInput" required maxlength="150"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 shadow-sm"
-                           placeholder="e.g. 3 BHK within 5km New Town">
-                </div>
-
-                <div id="saveSearchAlert" class="hidden p-2.5 rounded-xl text-xs font-semibold"></div>
-
-                <div class="flex items-center justify-end space-x-2.5 pt-2">
-                    <button type="button" id="cancelSaveSearchBtn" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                        Cancel
-                    </button>
-                    <button type="submit" id="confirmSaveSearchBtn" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-500/20 transition flex items-center space-x-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <span>Save Search</span>
-                    </button>
-                </div>
-            </form>
+        
+        <!-- Property List (Scrollable) -->
+        <div class="flex-1 overflow-y-auto p-3 bg-slate-50/50 dark:bg-slate-950/50 space-y-3" id="propertiesGrid">
+             <!-- Cards go here dynamically -->
         </div>
     </div>
 
-    <!-- Spatial Viewport & Intelligence Console -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
-        <!-- Interactive Corridor Map Canvas (8 Cols) -->
-        <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl overflow-hidden shadow-md flex flex-col h-[580px] relative transition-colors">
-            <!-- Map Top Overlay Bar -->
-            <div class="p-3.5 border-b border-slate-200/90 dark:border-slate-800 flex items-center justify-between bg-slate-50/90 dark:bg-slate-900/80 z-20 relative backdrop-blur-sm transition-colors">
-                <div class="flex items-center space-x-2.5">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    <span class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">Property Map</span>
-                </div>
-                <div class="hidden sm:flex items-center space-x-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                    <button id="toggleMarketAnalyticsBtn" type="button" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition font-bold">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
-                        <span>Market Analytics</span>
-                    </button>
-                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span> Click Map for Radius Search</span>
-                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-purple-500 mr-1.5"></span> Draw Polygon Boundary</span>
-                </div>
-            </div>
-            
-            <!-- Floating Viewport Query Button -->
-            <button id="searchBoundsBtn" class="absolute top-16 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-500 text-white dark:text-slate-950 font-bold px-5 py-2.5 rounded-full shadow-2xl text-xs hidden transition flex items-center space-x-2 border border-slate-700 dark:border-emerald-400">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                <span>Search This Map Area</span>
-            </button>
-            
-            <div id="map" class="w-full flex-grow z-10"></div>
-        </div>
+    <!-- RIGHT MAP AREA -->
+    <div class="flex-1 relative bg-slate-100 dark:bg-slate-950 h-full w-full">
+         <!-- Map Top Overlay Bar -->
+         <div class="absolute top-4 right-4 left-4 z-[400] flex items-start justify-between pointer-events-none">
+              <!-- Active Filter Info (Floating Left) -->
+              <div class="pointer-events-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-2 rounded-xl shadow-md border border-slate-200/50 dark:border-slate-700/50 max-w-[240px] sm:max-w-xs">
+                   <h3 class="text-[9px] font-extrabold text-slate-500 uppercase tracking-widest mb-0.5 flex items-center">
+                       <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> Viewport Details
+                   </h3>
+                   <div id="activeFilterInfo" class="text-xs text-slate-900 dark:text-white font-semibold line-clamp-2">
+                       All Locations
+                   </div>
+              </div>
 
-        <!-- Spatial Parameters & Query Telemetry (4 Cols) -->
-        <div class="lg:col-span-4 space-y-5 flex flex-col justify-between">
-            <!-- Radius Search Filter -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm transition-colors">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center">
-                        <span class="p-1.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 mr-2.5">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </span>
-                        Radius Search Filter
-                    </h3>
-                    <span id="radiusValue" class="text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2.5 py-0.5 rounded-lg border border-blue-200 dark:border-blue-500/20">5.0 km</span>
-                </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mb-3.5 leading-relaxed">
-                    Click any point on the map to filter properties within a chosen radius using high-precision spatial search.
-                </p>
-                <div class="space-y-4">
-                    <input type="range" id="radiusSlider" min="1" max="25" value="5" class="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                    <div class="flex space-x-2.5">
-                        <button id="locateMeBtn" class="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-sm transition flex justify-center items-center space-x-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            <span>My Location</span>
-                        </button>
-                        <button id="clearSearchBtn" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition hidden border border-slate-200 dark:border-slate-700">
-                            Reset Filter
-                        </button>
-                    </div>
-                </div>
-            </div>
+              <!-- Map Tools (Floating Right) -->
+              <div class="pointer-events-auto flex flex-col gap-2">
+                  <button id="toggleMarketAnalyticsBtn" type="button" class="px-3 py-2 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-md border border-slate-200/50 dark:border-slate-700/50 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 hover:bg-emerald-50 dark:hover:bg-slate-800 transition">
+                      <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+                      <span class="hidden sm:inline">Market Analytics</span>
+                  </button>
+              </div>
+         </div>
 
-            <!-- Active Search Filter -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm transition-colors flex-grow flex flex-col justify-between">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3 flex items-center">
-                        <span class="p-1.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 mr-2.5">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
-                            </svg>
-                        </span>
-                        Active Location Filter
-                    </h3>
-                    <div id="activeFilterInfo" class="text-xs text-slate-500 dark:text-slate-400 space-y-2">
-                        <p class="flex items-center text-slate-900 dark:text-slate-200 font-bold">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-                            All Locations
-                        </p>
-                        <p class="text-[11px] text-slate-500 leading-relaxed">Showing all verified properties across the Kolkata-Barasat metropolitan region.</p>
-                    </div>
-                </div>
+         <!-- Floating Viewport Query Button -->
+         <button id="searchBoundsBtn" class="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-full shadow-xl text-xs hidden transition flex items-center space-x-1.5 border border-slate-700">
+             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+             <span>Search This Area</span>
+         </button>
 
-                <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 mt-4">
-                    <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        <span>Showing results for your area</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Available Properties & Units Header & Feed -->
-    <div class="mb-12">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-2">
-            <div>
-                <h2 class="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center">
-                    <span>Available Properties & Units</span>
-                    <span id="cardCountPill" class="ml-3 text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border border-slate-200/80 dark:border-slate-700/80">
-                        0 listings
-                    </span>
-                </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Sorted by distance from your search area.</p>
-            </div>
-        </div>
-
-        <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Dynamically populated property cards -->
-        </div>
+         <div id="map" class="w-full h-full z-[10]"></div>
     </div>
 </div>
+
+<!-- Save Search Modal -->
+<div id="saveSearchModalBackdrop" class="fixed inset-0 z-[2600] bg-slate-950/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <!-- Existing Save Search Modal Content -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-md w-full p-6 relative">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Save Spatial Search</h3>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Bookmark active geofence & filters</p>
+                </div>
+            </div>
+            <button id="closeSaveSearchModalBtn" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 mb-4 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between">
+                <span class="text-slate-500 text-[11px]">Search Type:</span>
+                <span id="saveModalOperatorBadge" class="font-extrabold text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">Radius</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-slate-500 text-[11px]">Configuration:</span>
+                <span id="saveModalBhkBadge" class="font-bold text-slate-800 dark:text-slate-200">All Configurations</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-slate-500 text-[11px]">Boundary Details:</span>
+                <span id="saveModalSummary" class="text-[11px] font-mono text-slate-600 dark:text-slate-400">5.0 km Buffer</span>
+            </div>
+        </div>
+
+        <form id="saveSearchForm" class="space-y-4">
+            <div>
+                <label for="saveSearchTitleInput" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Search Label / Title
+                </label>
+                <input type="text" id="saveSearchTitleInput" required maxlength="150"
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 shadow-sm"
+                       placeholder="e.g. 3 BHK within 5km New Town">
+            </div>
+            <div id="saveSearchAlert" class="hidden p-2.5 rounded-xl text-xs font-semibold"></div>
+            <div class="flex items-center justify-end space-x-2.5 pt-2">
+                <button type="button" id="cancelSaveSearchBtn" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancel</button>
+                <button type="submit" id="confirmSaveSearchBtn" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-500/20 transition flex items-center space-x-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>Save Search</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 
 {% include 'components/recommendation_modal.html' %}
 {% include 'components/recommendation_drawer.html' %}
@@ -330,7 +261,6 @@
         const activeFilterInfo = document.getElementById('activeFilterInfo');
         const propertiesGrid = document.getElementById('propertiesGrid');
         const resultsCountText = document.getElementById('resultsCountText');
-        const cardCountPill = document.getElementById('cardCountPill');
         const toggleAmenities = document.getElementById('toggleAmenities');
         const neighborhoodSelect = document.getElementById('neighborhoodSelect');
 
@@ -362,7 +292,6 @@
                 : props;
 
             resultsCountText.textContent = `${filtered.length} Assets Active`;
-            cardCountPill.textContent = `${filtered.length} listings`;
 
             if (filtered.length === 0) {
                 propertiesGrid.innerHTML = `
@@ -378,77 +307,68 @@
             }
 
             propertiesGrid.innerHTML = filtered.map(prop => `
-                <div class="property-card group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/50 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between"
+                <div class="property-card group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/50 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col relative"
                      data-id="${prop.id}" data-lat="${prop.lat}" data-lng="${prop.lng}">
-                    <div>
-                        <div class="flex items-start justify-between mb-3">
-                            <span class="text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                                ${prop.property_type}
+                    
+                    <div class="flex items-start justify-between mb-2">
+                        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                            ${prop.property_type}
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-base font-black text-slate-900 dark:text-white">
+                                ${formatINR(prop.price)}
                             </span>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-lg font-black text-slate-900 dark:text-white">
-                                    ${formatINR(prop.price)}
-                                </span>
-                                <button type="button" class="favorite-toggle-btn p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition"
-                                        data-id="${prop.id}" title="Save to Favorites">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                                </button>
-                            </div>
+                            <button type="button" class="favorite-toggle-btn p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition relative z-10"
+                                    data-id="${prop.id}" title="Save to Favorites">
+                                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                            </button>
                         </div>
-                        <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition mb-1 line-clamp-1">
-                            ${prop.title}
-                        </h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-4 flex items-center">
-                            <svg class="w-3.5 h-3.5 mr-1 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            ${prop.address}
-                        </p>
                     </div>
+                    
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition mb-1 pr-8 line-clamp-1">
+                        ${prop.title}
+                    </h3>
+                    
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mb-3 flex items-center">
+                        <svg class="w-3 h-3 mr-1 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        ${prop.address}
+                    </p>
 
-                    <div>
-                        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 font-medium">
-                            <div class="flex items-center space-x-2.5">
-                                <span class="font-bold text-slate-900 dark:text-white">${prop.bedrooms} BHK</span>
-                                <span class="text-slate-300 dark:text-slate-700">•</span>
-                                <span>${prop.area_sqft} sqft</span>
-                            </div>
-                            <span class="text-[11px] font-semibold text-slate-400">₹${prop.price_per_sqft}/sqft</span>
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300 font-medium mt-auto">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-slate-900 dark:text-white">${prop.bedrooms} BHK</span>
+                            <span class="text-slate-300 dark:text-slate-700">•</span>
+                            <span>${prop.area_sqft} sqft</span>
                         </div>
-
-                        <!-- Proximity Inspection Button -->
-                        <button class="inspect-amenities-btn mt-3.5 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-emerald-600 text-slate-700 hover:text-white dark:bg-slate-800 dark:hover:bg-emerald-600 dark:text-slate-200 dark:hover:text-slate-950 text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-slate-200 dark:border-slate-700/80 shadow-sm"
-                                data-id="${prop.id}">
-                            <svg class="w-3.5 h-3.5 text-emerald-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.242-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            <span>Inspect Details & Proximity →</span>
-                        </button>
+                        <span class="font-semibold text-slate-400">₹${prop.price_per_sqft}/sqft</span>
                     </div>
                 </div>
             `).join('');
 
-            // Card click listener: fly to marker on map
+            // Synchronize heart icons immediately after rendering
+            if (window.syncCardHeartIcons) {
+                window.syncCardHeartIcons();
+            }
+
+            // Card click listener: fly to marker on map AND open drawer
             document.querySelectorAll('.property-card').forEach(card => {
                 card.addEventListener('click', (e) => {
-                    if (e.target.closest('.inspect-amenities-btn')) return;
+                    // Ignore clicks on the heart button
+                    if (e.target.closest('.favorite-toggle-btn')) return;
 
                     const lat = parseFloat(card.getAttribute('data-lat'));
                     const lng = parseFloat(card.getAttribute('data-lng'));
                     const id = parseInt(card.getAttribute('data-id'));
 
-                    map.flyTo([lat, lng], 15, { duration: 1.2 });
+                    // Fly map
+                    if (window.leafletMapInstance) {
+                        window.leafletMapInstance.flyTo([lat, lng], 16, { duration: 1.2 });
+                    }
 
-                    propertyLayer.eachLayer(layer => {
-                        if (layer.propertyId === id) {
-                            layer.openPopup();
-                        }
-                    });
-                });
-            });
-
-            // Inspect button click listener
-            document.querySelectorAll('.inspect-amenities-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const propId = parseInt(btn.getAttribute('data-id'));
-                    window.inspectPropertyProximity(propId);
+                    // Open popup and drawer
+                    if (window.openAssetDrawer) {
+                        window.openAssetDrawer(id);
+                    }
                 });
             });
 
@@ -1587,6 +1507,23 @@
                 }
             }
         })();
+
+        // Mobile Sidebar Toggle Logic
+        const mobileSidebarToggleBtn = document.getElementById('mobileSidebarToggleBtn');
+        const closeSidebarMobileBtn = document.getElementById('closeSidebarMobileBtn');
+        const sidebarContainer = document.getElementById('sidebarContainer');
+
+        if (mobileSidebarToggleBtn && closeSidebarMobileBtn && sidebarContainer) {
+            mobileSidebarToggleBtn.addEventListener('click', () => {
+                sidebarContainer.classList.remove('hidden');
+                sidebarContainer.classList.add('flex');
+            });
+
+            closeSidebarMobileBtn.addEventListener('click', () => {
+                sidebarContainer.classList.add('hidden');
+                sidebarContainer.classList.remove('flex');
+            });
+        }
     });
 </script>
 {% endblock %}

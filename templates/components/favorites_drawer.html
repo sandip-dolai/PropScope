@@ -1,8 +1,8 @@
 <!-- Slide-Out Buyer Favorites Drawer -->
-<div id="favoritesDrawerBackdrop" class="fixed inset-0 z-[2500] bg-slate-950/40 backdrop-blur-[2px] hidden transition-opacity lg:bg-transparent lg:pointer-events-none"></div>
+<div id="favoritesDrawerBackdrop" class="fixed inset-0 z-[2500] top-16 bg-slate-950/40 backdrop-blur-[2px] hidden transition-opacity lg:bg-transparent lg:pointer-events-none"></div>
 
 <aside id="favoritesDrawer"
-       class="fixed top-0 bottom-0 right-0 z-[2501] w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col pointer-events-auto">
+       class="fixed top-16 bottom-0 right-0 z-[2501] w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col pointer-events-auto">
     
     <!-- Drawer Header -->
     <div class="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
@@ -136,6 +136,22 @@
             }
         };
 
+        // Show a brief toast notification
+        function showFavToast(msg, isError = false) {
+            let toast = document.getElementById('favToastNotification');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'favToastNotification';
+                toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;transition:opacity 0.3s;';
+                document.body.appendChild(toast);
+            }
+            toast.className = `px-4 py-2 rounded-xl text-xs font-bold shadow-xl border ${isError ? 'bg-rose-600 text-white border-rose-500' : 'bg-emerald-600 text-white border-emerald-500'}`;
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
+        }
+
         // Global Toggle Favorite Action
         window.toggleFavorite = async function(propertyId) {
             // Guest Guard
@@ -153,31 +169,52 @@
             }
 
             const isFav = window.userFavoriteIds.has(propertyId);
+
+            // Optimistic UI update immediately
+            if (isFav) {
+                window.userFavoriteIds.delete(propertyId);
+            } else {
+                window.userFavoriteIds.add(propertyId);
+            }
+            syncCardHeartIcons();
+            updateNavbarFavoritesCount(window.userFavoriteIds.size);
+
             try {
                 if (isFav) {
                     // Remove favorite
                     await window.apiClient(`/api/v1/favorites/${propertyId}/`, { method: 'DELETE' });
-                    window.userFavoriteIds.delete(propertyId);
+                    showFavToast('Removed from saved assets');
                 } else {
                     // Add favorite
                     await window.apiClient('/api/v1/favorites/', {
                         method: 'POST',
                         body: JSON.stringify({ property_id: propertyId })
                     });
-                    window.userFavoriteIds.add(propertyId);
+                    showFavToast('✓ Saved to your watchlist!');
                 }
-
-                updateNavbarFavoritesCount(window.userFavoriteIds.size);
-                syncCardHeartIcons();
 
                 // If favorites drawer is currently open, refresh its list
                 if (!favoritesDrawer.classList.contains('translate-x-full')) {
                     loadFavoritesList();
                 }
             } catch (err) {
+                // Revert optimistic update on failure
+                if (isFav) {
+                    window.userFavoriteIds.add(propertyId);
+                } else {
+                    window.userFavoriteIds.delete(propertyId);
+                }
+                syncCardHeartIcons();
+                updateNavbarFavoritesCount(window.userFavoriteIds.size);
                 console.error('Favorite action failed:', err);
+                if (err.status === 403) {
+                    showFavToast('Session expired. Please sign in again.', true);
+                } else {
+                    showFavToast('Could not save. Please try again.', true);
+                }
             }
         };
+
 
         // Wire Drawer Bookmark Button
         const drawerSaveFavoriteBtn = document.getElementById('drawerSaveFavoriteBtn');
@@ -304,6 +341,5 @@
                 }
             });
         }
-    });
-    });
+    }); // end DOMContentLoaded
 </script>

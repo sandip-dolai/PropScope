@@ -270,6 +270,15 @@
             });
         }
 
+        const drawerSaveFavoriteBtn = document.getElementById('drawerSaveFavoriteBtn');
+        if (drawerSaveFavoriteBtn) {
+            drawerSaveFavoriteBtn.addEventListener('click', () => {
+                if (window.activeDrawerPropertyId && window.toggleFavorite) {
+                    window.toggleFavorite(window.activeDrawerPropertyId);
+                }
+            });
+        }
+
         function populatePropertyMetadata(prop) {
             document.getElementById('drawerAssetTitle').textContent = prop.title || 'Property Asset';
             document.getElementById('drawerAssetAddress').querySelector('span').textContent = prop.address || 'Address on file';

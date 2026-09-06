@@ -63,13 +63,16 @@
     <!-- Global API Client with Native CSRF Interception -->
     <script>
         window.getCsrfToken = function() {
-            const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            if (metaToken && metaToken.length > 10) return metaToken;
-
             const cookieToken = document.cookie.split('; ')
                 .find(row => row.startsWith('csrftoken='))
                 ?.split('=')[1];
-            return cookieToken || '';
+            
+            if (cookieToken) return cookieToken;
+
+            const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (metaToken && metaToken !== 'NOTPROVIDED' && metaToken.length > 10) return metaToken;
+            
+            return '';
         };
 
         window.apiClient = async function(url, options = {}) {
@@ -83,11 +86,18 @@
                 ...(options.headers || {})
             };
 
-            const response = await fetch(url, {
+            const fetchOptions = {
                 ...options,
                 headers,
                 credentials: 'same-origin'
-            });
+            };
+            
+            // Prevent aggressive browser caching for GET requests on dynamic APIs
+            if (!isMutating) {
+                fetchOptions.cache = 'no-store';
+            }
+
+            const response = await fetch(url, fetchOptions);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));

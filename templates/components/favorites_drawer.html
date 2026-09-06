@@ -1,5 +1,5 @@
 <!-- Slide-Out Buyer Favorites Drawer -->
-<div id="favoritesDrawerBackdrop" class="fixed inset-0 z-[2500] top-16 bg-slate-950/40 backdrop-blur-[2px] hidden transition-opacity lg:bg-transparent lg:pointer-events-none"></div>
+<div id="favoritesDrawerBackdrop" class="fixed inset-0 z-[2500] top-16 bg-slate-950/40 hidden transition-opacity lg:bg-transparent lg:pointer-events-none"></div>
 
 <aside id="favoritesDrawer"
        class="fixed top-16 bottom-0 right-0 z-[2501] w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col pointer-events-auto">
@@ -216,15 +216,7 @@
         };
 
 
-        // Wire Drawer Bookmark Button
-        const drawerSaveFavoriteBtn = document.getElementById('drawerSaveFavoriteBtn');
-        if (drawerSaveFavoriteBtn) {
-            drawerSaveFavoriteBtn.addEventListener('click', () => {
-                if (window.activeDrawerPropertyId) {
-                    window.toggleFavorite(window.activeDrawerPropertyId);
-                }
-            });
-        }
+        // (Note: The event listener for drawerSaveFavoriteBtn is handled in asset_drawer.html)
 
         // Load Full Favorites List in Drawer
         async function loadFavoritesList() {

@@ -573,4 +573,43 @@ class AgentLeadDetailView(APIView):
 
 
 
+class PropertyCompareAPIView(APIView):
+    """
+    Compares 2 to 4 properties side-by-side.
+    Returns serialized properties enriched with their Location Scores.
+    """
+    permission_classes = [permissions.AllowAny]
 
+    def post(self, request):
+        property_ids = request.data.get('property_ids', [])
+        
+        if not isinstance(property_ids, list):
+            return Response({"error": "property_ids must be a list"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # We allow exactly 2 to 4 properties for a side-by-side comparison matrix
+        if not (2 <= len(property_ids) <= 4):
+            return Response({"error": "Please select between 2 and 4 properties to compare."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Fetch properties ensuring they are ACTIVE
+        properties = Property.objects.filter(id__in=property_ids, status=PropertyStatus.ACTIVE).select_related('agent').prefetch_related('images')
+        
+        if len(properties) != len(property_ids):
+            return Response({"error": "One or more properties could not be found or are inactive."}, status=status.HTTP_404_NOT_FOUND)
+            
+        # Maintain the requested order
+        prop_dict = {p.id: p for p in properties}
+        ordered_properties = [prop_dict[pid] for pid in property_ids if pid in prop_dict]
+            
+        serializer = PropertySerializer(ordered_properties, many=True)
+        results = serializer.data
+        
+        # Enrich with Location Scores and Amenity Proximity
+        from apps.amenities.services import AmenitySpatialService
+        for item, prop_obj in zip(results, ordered_properties):
+            score_data = AmenitySpatialService.calculate_location_score_for_property(prop_obj)
+            item['location_score'] = score_data
+            
+        return Response({
+            "count": len(results),
+            "results": results
+        })

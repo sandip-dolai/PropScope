@@ -13,6 +13,7 @@ from .views import (
     PropertyInquiryCreateView,
     AgentLeadsAPIView,
     AgentLeadDetailView,
+    PropertyCompareAPIView,
 )
 from .admin_views import (
     AdminModerationStatsAPIView,
@@ -57,5 +58,6 @@ urlpatterns = [
     path('radius-search/', PropertyRadiusSearchView.as_view(), name='property_radius_search'),
     path('polygon-search/', PropertyPolygonSearchView.as_view(), name='property_polygon_search'),
     path('bbox-search/', PropertyBoundingBoxSearchView.as_view(), name='property_bbox_search'),
+    path('compare/', PropertyCompareAPIView.as_view(), name='property_compare'),
 ]
 

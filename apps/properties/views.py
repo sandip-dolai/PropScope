@@ -613,3 +613,70 @@ class PropertyCompareAPIView(APIView):
             "count": len(results),
             "results": results
         })
+
+class AreaAnalyticsAPIView(APIView):
+    """
+    Returns aggregated spatial market analytics for properties within a bounding box.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        bbox_str = request.query_params.get('bbox')
+        if not bbox_str:
+            return Response({"error": "bbox parameter is required (minLng,minLat,maxLng,maxLat)"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            bbox_coords = [float(c) for c in bbox_str.split(',')]
+            if len(bbox_coords) != 4:
+                raise ValueError
+            bbox_polygon = Polygon.from_bbox(bbox_coords)
+            bbox_polygon.srid = 4326
+        except ValueError:
+            return Response(
+                {"error": "bbox must contain 4 comma-separated numbers (minLng,minLat,maxLng,maxLat)"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        properties = Property.objects.filter(
+            status=PropertyStatus.ACTIVE,
+            location__contained=bbox_polygon
+        )
+        
+        from django.db.models import Avg, Count, Max, Min
+        
+        stats = properties.aggregate(
+            total_properties=Count('id'),
+            avg_price=Avg('price'),
+            min_price=Min('price'),
+            max_price=Max('price'),
+            avg_price_sqft=Avg('price_sqft'),
+            avg_area_sqft=Avg('area_sqft')
+        )
+        
+        # Breakdown by property type
+        type_breakdown = list(properties.values('property_type').annotate(count=Count('id')).order_by('-count'))
+        
+        # Approximate Median Price in Python
+        prices = list(properties.values_list('price', flat=True))
+        median_price = None
+        if prices:
+            prices.sort()
+            n = len(prices)
+            if n % 2 == 0:
+                median_price = float((prices[n//2 - 1] + prices[n//2]) / 2.0)
+            else:
+                median_price = float(prices[n//2])
+
+        return Response({
+            "bbox": bbox_coords,
+            "stats": {
+                "total_properties": stats['total_properties'] or 0,
+                "avg_price": float(stats['avg_price']) if stats['avg_price'] else None,
+                "median_price": median_price,
+                "min_price": float(stats['min_price']) if stats['min_price'] else None,
+                "max_price": float(stats['max_price']) if stats['max_price'] else None,
+                "avg_price_sqft": float(stats['avg_price_sqft']) if stats['avg_price_sqft'] else None,
+                "avg_area_sqft": float(stats['avg_area_sqft']) if stats['avg_area_sqft'] else None,
+            },
+            "type_breakdown": type_breakdown
+        })

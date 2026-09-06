@@ -14,6 +14,7 @@ from .views import (
     AgentLeadsAPIView,
     AgentLeadDetailView,
     PropertyCompareAPIView,
+    AreaAnalyticsAPIView,
 )
 from .admin_views import (
     AdminModerationStatsAPIView,
@@ -59,5 +60,6 @@ urlpatterns = [
     path('polygon-search/', PropertyPolygonSearchView.as_view(), name='property_polygon_search'),
     path('bbox-search/', PropertyBoundingBoxSearchView.as_view(), name='property_bbox_search'),
     path('compare/', PropertyCompareAPIView.as_view(), name='property_compare'),
+    path('analytics/area/', AreaAnalyticsAPIView.as_view(), name='area_analytics'),
 ]
 

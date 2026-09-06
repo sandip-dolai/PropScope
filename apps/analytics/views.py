@@ -36,6 +36,8 @@ class PropertyStatsView(APIView):
 class AgentDashboardMetricsView(APIView):
     """
     Returns executive portfolio metrics for verified Agents and Administrators.
+    For Buyers, returns a personalized buyer dashboard with favorites,
+    saved searches, and recommendation counts.
     Agents see their managed inventory; Admins see system-wide inventory.
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -43,12 +45,9 @@ class AgentDashboardMetricsView(APIView):
     def get(self, request):
         user = request.user
 
-        # Buyer Guard
+        # Buyer Dashboard — return buyer-specific data instead of 403
         if user.role == UserRole.BUYER and not user.is_staff:
-            return Response(
-                {"error": "Agent or Administrator credentials required to access command center analytics."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return self._get_buyer_dashboard(user)
 
         # Queryset scoping
         if user.role == UserRole.AGENT and not user.is_staff:
@@ -138,3 +137,56 @@ class AgentDashboardMetricsView(APIView):
             "recent_properties": recent_props,
         })
 
+    def _get_buyer_dashboard(self, user):
+        """Return buyer-specific dashboard metrics."""
+        from apps.favorites.models import Favorite
+        from apps.saved_searches.models import SavedSearch
+
+        favorites_count = Favorite.objects.filter(user=user).count()
+        saved_searches_count = SavedSearch.objects.filter(user=user).count()
+
+        # Platform stats for buyer context
+        active_properties = Property.objects.filter(status=PropertyStatus.ACTIVE)
+        total_active = active_properties.count()
+        avg_price = active_properties.aggregate(avg=Avg('price'))['avg'] or 0
+
+        # Recent favorites
+        recent_favorites = []
+        for fav in Favorite.objects.filter(user=user).select_related('property').order_by('-created_at')[:5]:
+            prop = fav.property
+            recent_favorites.append({
+                "id": prop.id,
+                "title": prop.title,
+                "price": float(prop.price),
+                "formatted_price": format_inr(prop.price),
+                "bedrooms": prop.bedrooms,
+                "area_sqft": float(prop.area_sqft),
+                "address": prop.address,
+                "favorited_at": fav.created_at.strftime("%b %d, %Y"),
+            })
+
+        # Recent saved searches
+        recent_searches = []
+        for ss in SavedSearch.objects.filter(user=user).order_by('-created_at')[:5]:
+            recent_searches.append({
+                "id": ss.id,
+                "name": ss.title,
+                "created_at": ss.created_at.strftime("%b %d, %Y"),
+            })
+
+        return Response({
+            "dashboard_type": "buyer",
+            "user_profile": {
+                "name": user.get_full_name() or user.username,
+                "email": user.email,
+                "role": user.role,
+            },
+            "metrics": {
+                "favorites_count": favorites_count,
+                "saved_searches_count": saved_searches_count,
+                "total_active_properties": total_active,
+                "avg_market_price": format_inr(avg_price),
+            },
+            "recent_favorites": recent_favorites,
+            "recent_searches": recent_searches,
+        })

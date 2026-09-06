@@ -1,8 +1,46 @@
 {% extends 'layouts/admin_base.html' %}
 
+{% block admin_breadcrumb %}
+    <svg class="w-3 h-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    <span class="text-slate-600 dark:text-slate-300">User Management</span>
+{% endblock %}
+
 {% block admin_content %}
-<div class="space-y-4">
-    <h2 class="text-xl font-black text-slate-800 dark:text-white">User Management</h2>
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </div>
+        <div>
+            <h2 class="text-xl font-black text-slate-800 dark:text-white">User Management</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Manage platform users, roles, and account status</p>
+        </div>
+    </div>
+
+    <!-- Summary Stat Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="userSummaryCards">
+        <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-slate-400 to-slate-600 rounded-l-2xl"></div>
+            <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Users</div>
+            <div class="text-2xl font-black text-slate-900 dark:text-white mt-1" id="userStatTotal">--</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-400 to-indigo-600 rounded-l-2xl"></div>
+            <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Buyers</div>
+            <div class="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1" id="userStatBuyers">--</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-600 rounded-l-2xl"></div>
+            <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Agents</div>
+            <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1" id="userStatAgents">--</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-violet-400 to-violet-600 rounded-l-2xl"></div>
+            <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Admins</div>
+            <div class="text-2xl font-black text-violet-600 dark:text-violet-400 mt-1" id="userStatAdmins">--</div>
+        </div>
+    </div>
     
     <!-- Action and Filter Bar -->
     <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
@@ -10,18 +48,18 @@
         <!-- Bulk Actions (Django Admin style) -->
         <div class="flex items-center space-x-2 w-full md:w-auto">
             <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Action:</label>
-            <select id="bulkActionSelect" class="pl-3 pr-8 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+            <select id="bulkActionSelect" class="pl-3 pr-8 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 transition">
                 <option value="">---------</option>
                 <option value="activate">Activate Selected Users</option>
                 <option value="suspend">Suspend Selected Users</option>
                 <option value="delete">Delete Selected Users</option>
             </select>
-            <button onclick="window.executeBulkAction()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition shadow-sm">Go</button>
+            <button onclick="window.executeBulkAction()" class="px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition shadow-sm">Go</button>
         </div>
 
         <div class="flex items-center space-x-3 w-full md:w-auto">
             <!-- Filter Dropdown -->
-            <select id="roleFilterSelect" class="pl-3 pr-8 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+            <select id="roleFilterSelect" class="pl-3 pr-8 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 transition">
                 <option value="">All Roles</option>
                 <option value="BUYER">Buyer</option>
                 <option value="AGENT">Agent</option>
@@ -30,7 +68,7 @@
             <!-- Search -->
             <div class="relative flex-grow sm:w-64">
                 <input type="text" id="userSearchInput" placeholder="Search user..."
-                       class="w-full pl-9 pr-4 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition">
+                       class="w-full pl-9 pr-4 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-violet-500 transition">
                 <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
         </div>
@@ -43,7 +81,7 @@
                 <thead class="bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
                     <tr>
                         <th class="px-5 py-4 w-12">
-                            <input type="checkbox" id="selectAllUsers" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                            <input type="checkbox" id="selectAllUsers" class="rounded border-slate-300 text-violet-600 focus:ring-violet-500">
                         </th>
                         <th class="px-5 py-4">User</th>
                         <th class="px-5 py-4">Role</th>
@@ -52,11 +90,12 @@
                     </tr>
                 </thead>
                 <tbody id="userTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80">
-                    <tr><td colspan="5" class="px-5 py-8 text-center text-slate-400">Loading users...</td></tr>
+                    <tr class="animate-pulse"><td class="px-5 py-4 w-12"><div class="w-4 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div></td><td class="px-5 py-4"><div class="flex items-center space-x-3"><div class="w-8 h-8 bg-slate-200 dark:bg-slate-800 rounded-full"></div><div class="space-y-1"><div class="w-24 h-3 bg-slate-200 dark:bg-slate-800 rounded"></div><div class="w-32 h-2.5 bg-slate-100 dark:bg-slate-800/60 rounded"></div></div></div></td><td class="px-5 py-4"><div class="w-14 h-5 bg-slate-200 dark:bg-slate-800 rounded-full"></div></td><td class="px-5 py-4"><div class="w-14 h-5 bg-slate-200 dark:bg-slate-800 rounded-full"></div></td><td class="px-5 py-4"><div class="flex justify-end space-x-2"><div class="w-12 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div><div class="w-16 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div></div></td></tr>
+                    <tr class="animate-pulse"><td class="px-5 py-4 w-12"><div class="w-4 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div></td><td class="px-5 py-4"><div class="flex items-center space-x-3"><div class="w-8 h-8 bg-slate-200 dark:bg-slate-800 rounded-full"></div><div class="space-y-1"><div class="w-28 h-3 bg-slate-200 dark:bg-slate-800 rounded"></div><div class="w-28 h-2.5 bg-slate-100 dark:bg-slate-800/60 rounded"></div></div></div></td><td class="px-5 py-4"><div class="w-14 h-5 bg-slate-200 dark:bg-slate-800 rounded-full"></div></td><td class="px-5 py-4"><div class="w-14 h-5 bg-slate-200 dark:bg-slate-800 rounded-full"></div></td><td class="px-5 py-4"><div class="flex justify-end space-x-2"><div class="w-12 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div><div class="w-16 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div></div></td></tr>
                 </tbody>
             </table>
         </div>
-        <!-- Pagination Placeholder -->
+        <!-- Pagination -->
         <div class="px-5 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
             <div class="text-xs text-slate-500 font-semibold" id="paginationInfo">Showing 0 users</div>
             <div class="flex items-center space-x-2" id="paginationControls"></div>
@@ -65,10 +104,13 @@
 </div>
 
 <!-- Edit User Modal -->
-<div id="userModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <h3 id="userModalTitle" class="font-bold text-slate-900 dark:text-white">Edit User</h3>
+<div id="userModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-all">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all scale-95 opacity-0" id="userModalContent">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-violet-50 to-transparent dark:from-violet-500/5 dark:to-transparent">
+            <h3 id="userModalTitle" class="font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <svg class="w-4 h-4 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                <span>Edit User</span>
+            </h3>
             <button onclick="window.closeUserModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
@@ -79,37 +121,37 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">First Name</label>
-                        <input type="text" id="editFirstName" class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+                        <input type="text" id="editFirstName" class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 transition">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Last Name</label>
-                        <input type="text" id="editLastName" class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+                        <input type="text" id="editLastName" class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 transition">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Username</label>
-                    <input type="text" id="editUsername" required class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+                    <input type="text" id="editUsername" required class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 transition">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Email</label>
-                    <input type="email" id="editEmail" required class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+                    <input type="email" id="editEmail" required class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 transition">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Role</label>
-                    <select id="editRole" class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 transition">
+                    <select id="editRole" class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-violet-500 transition">
                         <option value="BUYER">Buyer</option>
                         <option value="AGENT">Agent</option>
                         <option value="ADMIN">Admin</option>
                     </select>
                 </div>
                 <div class="flex items-center space-x-2 pt-2">
-                    <input type="checkbox" id="editIsActive" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                    <input type="checkbox" id="editIsActive" class="rounded border-slate-300 text-violet-600 focus:ring-violet-500">
                     <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Account is Active</label>
                 </div>
             </div>
             <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex justify-end space-x-2">
                 <button type="button" onclick="window.closeUserModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-sm">Save Changes</button>
+                <button type="submit" class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition shadow-sm">Save Changes</button>
             </div>
         </form>
     </div>
@@ -141,6 +183,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Uncheck the 'select all' box whenever we load a page
             document.getElementById('selectAllUsers').checked = false;
             
+            // Update summary stats
+            const users = res.results || [];
+            document.getElementById('userStatTotal').textContent = res.count || users.length;
+            document.getElementById('userStatBuyers').textContent = users.filter(u => u.role === 'BUYER').length;
+            document.getElementById('userStatAgents').textContent = users.filter(u => u.role === 'AGENT').length;
+            document.getElementById('userStatAdmins').textContent = users.filter(u => u.role === 'ADMIN').length;
+
             if (!res.results || res.results.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400">No users found.</td></tr>`;
                 document.getElementById('paginationInfo').textContent = 'Showing 0 users';
@@ -155,38 +204,56 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let pgHtml = '';
             if (page > 1) {
-                pgHtml += `<button onclick="window.changeUserPage(${page-1})" class="px-2 py-1 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition">Prev</button>`;
+                pgHtml += `<button onclick="window.changeUserPage(${page-1})" class="px-2.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition">Prev</button>`;
+            }
+            for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
+                pgHtml += `<button onclick="window.changeUserPage(${i})" class="px-2.5 py-1 text-xs font-bold rounded-lg shadow-sm transition ${i === page ? 'bg-violet-600 text-white border border-violet-600' : 'text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'}">${i}</button>`;
             }
             if (page < totalPages) {
-                pgHtml += `<button onclick="window.changeUserPage(${page+1})" class="px-2 py-1 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition">Next</button>`;
+                pgHtml += `<button onclick="window.changeUserPage(${page+1})" class="px-2.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition">Next</button>`;
             }
             document.getElementById('paginationControls').innerHTML = pgHtml;
 
             tbody.innerHTML = res.results.map(u => {
                 const statusBadge = u.is_active ? 
-                    `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">Active</span>` :
-                    `<span class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500/10 text-rose-600 border border-rose-500/20">Suspended</span>`;
+                    `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Active</span>` :
+                    `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">Suspended</span>`;
                 
-                // Keep the original toggle logic but switch class based on status
+                // Role badge with distinct colors
+                let roleBadge = '';
+                if (u.role === 'BUYER') roleBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">Buyer</span>`;
+                else if (u.role === 'AGENT') roleBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Agent</span>`;
+                else roleBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">Admin</span>`;
+
                 const toggleText = u.is_active ? 'Suspend' : 'Activate';
-                const toggleClass = u.is_active ? 'bg-rose-100 text-rose-600 hover:bg-rose-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200';
+                const toggleClass = u.is_active ? 'bg-rose-100 text-rose-600 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-900/50' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50';
+                
+                // Avatar gradient based on role
+                const avatarGradient = u.role === 'ADMIN' ? 'from-violet-500 to-purple-500' : u.role === 'AGENT' ? 'from-emerald-500 to-teal-500' : 'from-indigo-500 to-blue-500';
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                         <td class="px-5 py-4 w-12">
-                            <input type="checkbox" value="${u.id}" class="user-row-checkbox rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                            <input type="checkbox" value="${u.id}" class="user-row-checkbox rounded border-slate-300 text-violet-600 focus:ring-violet-500">
                         </td>
                         <td class="px-5 py-4">
-                            <div class="font-bold text-xs text-slate-900 dark:text-white">${u.username}</div>
-                            <div class="text-[10px] text-slate-500">${u.email}</div>
-                            ${u.first_name || u.last_name ? `<div class="text-[10px] text-slate-400 mt-0.5">${u.first_name} ${u.last_name}</div>` : ''}
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-[10px] shadow-sm flex-shrink-0">
+                                    ${(u.first_name || u.username || 'U').charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div class="font-bold text-xs text-slate-900 dark:text-white">${u.username}</div>
+                                    <div class="text-[10px] text-slate-500">${u.email}</div>
+                                    ${u.first_name || u.last_name ? `<div class="text-[10px] text-slate-400 mt-0.5">${u.first_name} ${u.last_name}</div>` : ''}
+                                </div>
+                            </div>
                         </td>
-                        <td class="px-5 py-4 text-xs font-semibold text-slate-700 dark:text-slate-300">${u.role_display}</td>
+                        <td class="px-5 py-4 text-xs">${roleBadge}</td>
                         <td class="px-5 py-4 text-xs">${statusBadge}</td>
                         <td class="px-5 py-4 text-right">
                             <div class="flex items-center justify-end space-x-2">
                                 <button onclick="window.openUserModal(${u.id}, '${u.username}', '${u.email}', '${u.first_name || ''}', '${u.last_name || ''}', '${u.role}', ${u.is_active})" 
-                                        class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-xs font-bold transition">Edit</button>
+                                        class="px-3 py-1.5 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-900/20 dark:text-violet-400 dark:hover:bg-violet-900/30 text-xs font-bold transition">Edit</button>
                                 <button onclick="window.toggleUserStatus(${u.id}, ${u.is_active})" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${toggleClass}">${toggleText}</button>
                             </div>
                         </td>
@@ -253,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Edit Modal Logic
+    // Edit Modal Logic with animation
     window.openUserModal = function(id, username, email, firstName, lastName, role, isActive) {
         document.getElementById('editUserId').value = id;
         document.getElementById('editUsername').value = username;
@@ -263,12 +330,25 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('editRole').value = role;
         document.getElementById('editIsActive').checked = isActive;
         
-        document.getElementById('userModal').classList.remove('hidden');
+        const modal = document.getElementById('userModal');
+        const content = document.getElementById('userModalContent');
+        modal.classList.remove('hidden');
+        // Animate in
+        requestAnimationFrame(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        });
     };
 
     window.closeUserModal = function() {
-        document.getElementById('userModal').classList.add('hidden');
-        document.getElementById('userForm').reset();
+        const modal = document.getElementById('userModal');
+        const content = document.getElementById('userModalContent');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.getElementById('userForm').reset();
+        }, 200);
     };
 
     window.saveUser = async function(e) {

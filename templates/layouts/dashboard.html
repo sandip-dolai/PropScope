@@ -3,8 +3,11 @@
 {% block layout %}
 <div class="min-h-screen flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
     
+    <!-- MOBILE SIDEBAR OVERLAY -->
+    <div id="mobileSidebarOverlay" class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm hidden md:hidden transition-opacity"></div>
+
     <!-- GLOBAL SIDEBAR -->
-    <aside class="hidden md:flex w-64 bg-white dark:bg-slate-900 border-r border-slate-200/90 dark:border-slate-800/80 flex-col flex-shrink-0 sticky top-0 h-screen transition-all">
+    <aside id="sidebarPanel" class="hidden md:flex w-64 bg-white dark:bg-slate-900 border-r border-slate-200/90 dark:border-slate-800/80 flex-col flex-shrink-0 sticky top-0 h-screen transition-all z-50">
         <!-- Brand & Console Title -->
         <div class="h-16 flex items-center px-4 border-b border-slate-200/90 dark:border-slate-800/80">
             <div class="flex items-center space-x-3.5">
@@ -16,9 +19,19 @@
                         <a href="{% url 'home' %}" class="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white hover:opacity-90 transition">
                             PropScope
                         </a>
+                        {% if request.user.role == 'ADMIN' or request.user.is_superuser %}
+                        <span class="text-[9px] uppercase font-extrabold tracking-wider px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-500/20">
+                            ADMIN
+                        </span>
+                        {% elif request.user.role == 'AGENT' %}
                         <span class="text-[9px] uppercase font-extrabold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                             CMD
                         </span>
+                        {% else %}
+                        <span class="text-[9px] uppercase font-extrabold tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20">
+                            HUB
+                        </span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -26,6 +39,45 @@
 
         <!-- Navigation Links -->
         <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto text-xs font-bold">
+
+            {% if request.user.role == 'BUYER' and not request.user.is_superuser %}
+            <!-- ===== BUYER NAVIGATION ===== -->
+            <div class="px-2 pb-1 pt-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">My Dashboard</div>
+            
+            <a href="{% url 'dashboard' %}" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl {% if request.resolver_match.url_name == 'dashboard' %}bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>Overview</span>
+            </a>
+
+            <div class="px-2 pb-1 pt-5 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Explore</div>
+
+            <a href="{% url 'home' %}" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                <span>Browse Properties</span>
+            </a>
+
+            <a href="{% url 'home' %}#favorites" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                <span>My Favorites</span>
+            </a>
+
+            <a href="{% url 'home' %}#saved-searches" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                <span>Saved Searches</span>
+            </a>
+
+            <a href="{% url 'home' %}#recommendations" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                <span>Recommendations</span>
+            </a>
+
+            {% elif request.user.role == 'AGENT' and not request.user.is_platform_admin %}
+            <!-- ===== AGENT NAVIGATION ===== -->
             <div class="px-2 pb-1 pt-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Platform Telemetry</div>
             
             <a href="{% url 'dashboard' %}" 
@@ -52,17 +104,52 @@
                 <span>Add Listing</span>
             </a>
 
-            {% if request.user.is_platform_admin %}
-            <div class="px-2 pb-1 pt-6 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Governance</div>
+            <div class="px-2 pb-1 pt-6 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Public Access</div>
+            <a href="/agents/{{ request.user.id }}/" target="_blank"
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-emerald-500 dark:text-slate-400 transition">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                <span>Showcase Profile &rarr;</span>
+            </a>
+
+            {% else %}
+            <!-- ===== ADMIN NAVIGATION ===== -->
+            <div class="px-2 pb-1 pt-2 text-[10px] font-extrabold text-violet-500 dark:text-violet-400 uppercase tracking-widest">Platform Command</div>
+            
+            <a href="{% url 'dashboard' %}" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl {% if request.resolver_match.url_name == 'dashboard' %}bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>Portfolio Analytics</span>
+            </a>
+            
+            <a href="{% url 'property_inventory' %}" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl {% if request.resolver_match.url_name == 'property_inventory' %}bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                <span>Inventory Grid</span>
+            </a>
+
+            <a href="{% url 'property_leads' %}" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl {% if request.resolver_match.url_name == 'property_leads' %}bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span>Buyer Leads CRM</span>
+            </a>
+            
+            <a href="{% url 'property_create' %}" 
+               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl {% if request.resolver_match.url_name == 'property_create' %}bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>Add Listing</span>
+            </a>
+
+            <!-- Admin Governance Section -->
+            <div class="px-2 pb-1 pt-6 text-[10px] font-extrabold text-violet-500 dark:text-violet-400 uppercase tracking-widest">Governance</div>
             
             {% if request.resolver_match.url_name == 'admin_overview' or request.resolver_match.url_name == 'admin_queue' or request.resolver_match.url_name == 'admin_agents' or request.resolver_match.url_name == 'admin_users' or request.resolver_match.url_name == 'admin_amenities' or request.resolver_match.url_name == 'admin_areas' %}
-                <div class="bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 overflow-hidden mb-2">
-                    <button type="button" id="adminModerationToggle" class="w-full flex items-center justify-between px-3 py-2.5 bg-white dark:bg-slate-800/80 text-emerald-700 dark:text-emerald-400 border-b border-slate-100 dark:border-slate-800/80 shadow-sm transition">
+                <div class="bg-violet-50/60 dark:bg-violet-500/5 rounded-2xl border border-violet-200/60 dark:border-violet-500/10 overflow-hidden mb-2">
+                    <button type="button" id="adminModerationToggle" class="w-full flex items-center justify-between px-3 py-2.5 bg-white dark:bg-slate-800/80 text-violet-700 dark:text-violet-400 border-b border-violet-100 dark:border-violet-500/10 shadow-sm transition">
                         <div class="flex items-center space-x-3">
-                            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            <svg class="w-4 h-4 text-violet-600 dark:text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                             <span class="font-bold text-[11px] uppercase tracking-wide">Admin Moderation</span>
                         </div>
-                        <svg id="adminModerationArrow" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500 transform rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg id="adminModerationArrow" class="w-3.5 h-3.5 text-violet-600 dark:text-violet-500 transform rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <!-- Sub-menu rendered by admin_overview.html -->
                     <div id="adminModerationSubmenu" class="py-1.5 px-1.5 space-y-0.5 transition-all">
@@ -71,37 +158,41 @@
                 </div>
             {% else %}
                 <a href="{% url 'admin_overview' %}" 
-                   class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                   class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-400 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     <span>Admin Moderation</span>
                     <svg class="w-3.5 h-3.5 ml-auto opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </a>
             {% endif %}
             {% endif %}
-
-            {% if request.user.role == 'AGENT' %}
-            <div class="px-2 pb-1 pt-6 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Public Access</div>
-            <a href="/agents/{{ request.user.id }}/" target="_blank"
-               class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-emerald-500 dark:text-slate-400 transition">
-                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                <span>Showcase Profile &rarr;</span>
-            </a>
-            {% endif %}
         </nav>
 
         <!-- User Profile (Bottom of sidebar) -->
         <div class="p-4 border-t border-slate-200 dark:border-slate-800">
             <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center font-extrabold text-xs text-white shadow-sm flex-shrink-0">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-xs text-white shadow-sm flex-shrink-0
+                    {% if request.user.role == 'ADMIN' or request.user.is_superuser %}bg-gradient-to-tr from-violet-600 to-purple-500
+                    {% elif request.user.role == 'AGENT' %}bg-gradient-to-tr from-emerald-600 to-teal-500
+                    {% else %}bg-gradient-to-tr from-indigo-600 to-blue-500{% endif %}">
                     {{ request.user.first_name|slice:":1"|default:request.user.username|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|default:""|upper }}
                 </div>
                 <div class="overflow-hidden">
                     <div class="text-xs font-bold text-slate-900 dark:text-white truncate">
                         {{ request.user.get_full_name|default:request.user.username }}
                     </div>
-                    <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 inline-block mt-0.5">
-                        {% if request.user.role == 'AGENT' %}Licensed Agent{% else %}Admin{% endif %}
+                    {% if request.user.role == 'ADMIN' or request.user.is_superuser %}
+                    <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 inline-block mt-0.5">
+                        Platform Admin
                     </span>
+                    {% elif request.user.role == 'AGENT' %}
+                    <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 inline-block mt-0.5">
+                        Licensed Agent
+                    </span>
+                    {% else %}
+                    <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 inline-block mt-0.5">
+                        Buyer
+                    </span>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -113,9 +204,21 @@
         <!-- TOP HEADER -->
         <header class="h-16 border-b border-slate-200/90 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-30 transition-colors">
             
-            <div class="flex items-center space-x-2">
-                <!-- Mobile Navigation Info -->
-                <p class="text-[11px] font-bold text-slate-400 dark:text-slate-500 tracking-wide uppercase">Asset Management & Portfolio Telemetry</p>
+            <div class="flex items-center space-x-3">
+                <!-- Mobile Hamburger -->
+                <button id="mobileMenuBtn" type="button" class="md:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition" aria-label="Open menu">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <!-- Header Subtitle -->
+                <p class="text-[11px] font-bold text-slate-400 dark:text-slate-500 tracking-wide uppercase">
+                    {% if request.user.role == 'ADMIN' or request.user.is_superuser %}
+                        Platform Governance & Administration
+                    {% elif request.user.role == 'AGENT' %}
+                        Asset Management & Portfolio Telemetry
+                    {% else %}
+                        Property Discovery & Insights
+                    {% endif %}
+                </p>
             </div>
             
             <!-- Right Actions: Switch to Map, Theme Switcher, Logout -->
@@ -155,7 +258,7 @@
         <!-- Enterprise Footer -->
         <footer class="border-t border-slate-200 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/50 py-4 px-4 sm:px-6 lg:px-8 text-[11px] text-slate-500 dark:text-slate-400">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
-                <span>PropScope Geospatial Real Estate & Spatial Intelligence Platform</span>
+                <span>PropScope Geospatial Real Estate &amp; Spatial Intelligence Platform</span>
                 <div class="flex items-center space-x-4">
                     <span>PostGIS 3.4 GiST Indexed</span>
                     <span>•</span>
@@ -180,6 +283,29 @@
                     window.location.href = '/';
                 }
             });
+        }
+
+        // Mobile sidebar toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebarPanel = document.getElementById('sidebarPanel');
+        const mobileSidebarOverlay = document.getElementById('mobileSidebarOverlay');
+
+        function openMobileSidebar() {
+            sidebarPanel.classList.remove('hidden');
+            sidebarPanel.classList.add('fixed', 'top-0', 'left-0', 'h-full');
+            mobileSidebarOverlay.classList.remove('hidden');
+        }
+        function closeMobileSidebar() {
+            sidebarPanel.classList.add('hidden');
+            sidebarPanel.classList.remove('fixed', 'top-0', 'left-0', 'h-full');
+            mobileSidebarOverlay.classList.add('hidden');
+        }
+
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', openMobileSidebar);
+        }
+        if (mobileSidebarOverlay) {
+            mobileSidebarOverlay.addEventListener('click', closeMobileSidebar);
         }
         
         // Admin Sidebar Accordion Toggle

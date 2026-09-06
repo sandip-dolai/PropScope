@@ -1,18 +1,24 @@
 {% extends 'layouts/dashboard.html' %}
 
-{% block title %}Agent Command Center — PropScope Spatial Portfolio Analytics{% endblock %}
+{% block title %}
+    {% if request.user.role == 'BUYER' and not request.user.is_superuser %}
+        My Property Hub — PropScope
+    {% else %}
+        Agent Command Center — PropScope Spatial Portfolio Analytics
+    {% endif %}
+{% endblock %}
 
 {% block dashboard_content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-    <!-- Guest / Unauthorized Alert (Shown if unauthenticated or buyer) -->
+    <!-- Guest / Unauthorized Alert -->
     <div id="unauthorizedBanner" class="hidden p-6 rounded-3xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-center space-y-3">
         <div class="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         </div>
-        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Agent Credentials Required</h3>
+        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Authentication Required</h3>
         <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            The Command Center requires an authenticated <strong>Licensed Real Estate Agent</strong> or <strong>Administrator</strong> persona. Please log in or use the 1-click Agent Priya demo persona.
+            Please log in to access your dashboard. Use the public map to browse properties as a guest.
         </p>
         <div class="pt-2">
             <a href="{% url 'home' %}" class="inline-flex items-center px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-sm hover:bg-emerald-500 transition">
@@ -21,57 +27,225 @@
         </div>
     </div>
 
-    <!-- Main Dashboard Body -->
-    <div id="dashboardMain" class="space-y-8">
-        <!-- Executive Persona Header Banner -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-colors">
-            <div class="flex items-center space-x-4">
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center font-black text-xl text-white shadow-md shadow-emerald-500/20 flex-shrink-0">
-                    <span id="agentInitials">AG</span>
-                </div>
+    <!-- ===== BUYER DASHBOARD ===== -->
+    <div id="buyerDashboard" class="hidden space-y-8">
+        <!-- Buyer Welcome Banner -->
+        <div class="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-500 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
+            <div class="absolute -top-24 -right-24 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-indigo-300/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <div class="flex flex-wrap items-center gap-2 mb-1">
-                        <h1 id="agentName" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                            Loading Portfolio...
-                        </h1>
-                        <span id="scopeBadge" class="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
-                            Verified Agent
-                        </span>
+                    <div class="flex items-center space-x-2.5 mb-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-[11px] font-extrabold uppercase tracking-widest text-indigo-200">Property Discovery Hub</span>
                     </div>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center space-x-2">
-                        <span id="agencyName">🏢 Real Estate Enterprise</span>
-                        <span>•</span>
-                        <span id="licenseNumber" class="font-mono text-slate-600 dark:text-slate-300">WB-RERA Verified</span>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight">
+                        Welcome back, <span id="buyerName">User</span>
+                    </h1>
+                    <p class="text-sm text-indigo-100 mt-1 max-w-lg leading-relaxed">
+                        Your personalized property insights and saved activity at a glance.
                     </p>
                 </div>
+                <a href="{% url 'home' %}"
+                   class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white text-xs font-bold transition border border-white/20 self-start">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span>Browse Properties</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Buyer KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- Favorites -->
+            <div class="group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-all hover:shadow-md hover:-translate-y-0.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">My Favorites</span>
+                    <div class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    </div>
+                </div>
+                <h3 id="buyerFavCount" class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">0</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Saved properties</p>
             </div>
 
-            <!-- Telemetry & Actions -->
-            <div class="flex flex-wrap items-center gap-2 self-start md:self-auto">
-                <a href="{% url 'property_create' %}"
-                   class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-900/20 transition">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                    <span>Add Listing</span>
-                </a>
-                <a href="{% url 'property_inventory' %}"
-                   class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition border border-slate-200/80 dark:border-slate-700/80">
-                    <span>Inventory</span>
-                </a>
-                <a href="{% url 'property_leads' %}"
-                   class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition border border-slate-200/80 dark:border-slate-700/80">
-                    <span>Leads CRM</span>
-                </a>
-                <button id="refreshMetricsBtn" type="button" title="Refresh Telemetry"
-                        class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shadow-sm border border-slate-200/80 dark:border-slate-700/80">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                </button>
+            <!-- Saved Searches -->
+            <div class="group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-all hover:shadow-md hover:-translate-y-0.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Saved Searches</span>
+                    <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                    </div>
+                </div>
+                <h3 id="buyerSearchCount" class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">0</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Active search alerts</p>
+            </div>
+
+            <!-- Properties on Market -->
+            <div class="group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-all hover:shadow-md hover:-translate-y-0.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">On Market</span>
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    </div>
+                </div>
+                <h3 id="buyerActiveProps" class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">0</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Active listings available</p>
+            </div>
+
+            <!-- Avg Market Price -->
+            <div class="group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-all hover:shadow-md hover:-translate-y-0.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Avg. Market Price</span>
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                </div>
+                <h3 id="buyerAvgPrice" class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">₹0</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Across all active listings</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <a href="{% url 'home' %}" class="group flex items-center space-x-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <div>
+                    <div class="text-xs font-extrabold text-slate-900 dark:text-white">Browse Properties</div>
+                    <div class="text-[10px] text-slate-400">Explore the map &rarr;</div>
+                </div>
+            </a>
+            <a href="{% url 'home' %}#favorites" class="group flex items-center space-x-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-rose-300 dark:hover:border-rose-500/30 transition-all">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                </div>
+                <div>
+                    <div class="text-xs font-extrabold text-slate-900 dark:text-white">My Favorites</div>
+                    <div class="text-[10px] text-slate-400">View saved properties &rarr;</div>
+                </div>
+            </a>
+            <a href="{% url 'home' %}#saved-searches" class="group flex items-center space-x-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                </div>
+                <div>
+                    <div class="text-xs font-extrabold text-slate-900 dark:text-white">Saved Searches</div>
+                    <div class="text-[10px] text-slate-400">Manage alerts &rarr;</div>
+                </div>
+            </a>
+            <a href="{% url 'home' %}#recommendations" class="group flex items-center space-x-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-amber-300 dark:hover:border-amber-500/30 transition-all">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                </div>
+                <div>
+                    <div class="text-xs font-extrabold text-slate-900 dark:text-white">Recommendations</div>
+                    <div class="text-[10px] text-slate-400">AI-powered picks &rarr;</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Recent Favorites Table -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4 transition-colors">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-2.5"></span>
+                        Recent Favorites
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Your most recently saved properties</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-100 dark:border-slate-800/80 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                            <th class="pb-3 pr-4">Property</th>
+                            <th class="pb-3 px-4">Specs</th>
+                            <th class="pb-3 px-4">Price</th>
+                            <th class="pb-3 pl-4">Saved</th>
+                        </tr>
+                    </thead>
+                    <tbody id="buyerFavoritesTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                        <tr>
+                            <td colspan="4" class="py-8 text-center text-slate-400 text-xs">Loading favorites...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Saved Searches -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4 transition-colors">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center">
+                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 mr-2.5"></span>
+                        Saved Searches
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Your active search criteria and alerts</p>
+                </div>
+            </div>
+            <div id="buyerSearchesContainer" class="space-y-2">
+                <div class="py-6 text-center text-slate-400 text-xs">Loading saved searches...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== AGENT / ADMIN DASHBOARD ===== -->
+    <div id="dashboardMain" class="space-y-8">
+        <!-- Executive Persona Header Banner -->
+        <div class="relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 shadow-sm transition-colors">
+            <div class="absolute -top-16 -right-16 w-48 h-48 bg-emerald-500/5 dark:bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center font-black text-xl text-white shadow-md shadow-emerald-500/20 flex-shrink-0">
+                        <span id="agentInitials">AG</span>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <h1 id="agentName" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                                Loading Portfolio...
+                            </h1>
+                            <span id="scopeBadge" class="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                                Verified Agent
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center space-x-2">
+                            <span id="agencyName">🏢 Real Estate Enterprise</span>
+                            <span>•</span>
+                            <span id="licenseNumber" class="font-mono text-slate-600 dark:text-slate-300">WB-RERA Verified</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Telemetry & Actions -->
+                <div class="flex flex-wrap items-center gap-2 self-start md:self-auto">
+                    <a href="{% url 'property_create' %}"
+                       class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-900/20 transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                        <span>Add Listing</span>
+                    </a>
+                    <a href="{% url 'property_inventory' %}"
+                       class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition border border-slate-200/80 dark:border-slate-700/80">
+                        <span>Inventory</span>
+                    </a>
+                    <a href="{% url 'property_leads' %}"
+                       class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition border border-slate-200/80 dark:border-slate-700/80">
+                        <span>Leads CRM</span>
+                    </a>
+                    <button id="refreshMetricsBtn" type="button" title="Refresh Telemetry"
+                            class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shadow-sm border border-slate-200/80 dark:border-slate-700/80">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    </button>
+                </div>
             </div>
         </div>
 
         <!-- 4 Top-Tier Executive KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <!-- KPI 1: Total Portfolio AUM -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-colors">
+            <div class="group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-all hover:shadow-md hover:-translate-y-0.5">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Portfolio AUM</span>
                     <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
@@ -83,13 +257,13 @@
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Active inventory valuation</p>
                 </div>
                 <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
                     <span>Live in PostGIS spatial index</span>
                 </div>
             </div>
 
             <!-- KPI 2: Active Inventory Count -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-colors">
+            <div class="group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-all hover:shadow-md hover:-translate-y-0.5">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Active Inventory</span>
                     <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
@@ -106,7 +280,7 @@
             </div>
 
             <!-- KPI 3: Average Yield Rate -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-colors">
+            <div class="group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-all hover:shadow-md hover:-translate-y-0.5">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Price / SqFt Density</span>
                     <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
@@ -123,7 +297,7 @@
             </div>
 
             <!-- KPI 4: Deal Pipeline Velocity -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-colors">
+            <div class="group bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 transition-all hover:shadow-md hover:-translate-y-0.5">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Deal Pipeline</span>
                     <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
@@ -231,18 +405,92 @@
             </div>
         </div>
     </div>
+
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const unauthorizedBanner = document.getElementById('unauthorizedBanner');
         const dashboardMain = document.getElementById('dashboardMain');
+        const buyerDashboard = document.getElementById('buyerDashboard');
         const refreshMetricsBtn = document.getElementById('refreshMetricsBtn');
 
         async function fetchDashboardMetrics() {
             try {
                 const data = await window.apiClient('/api/v1/analytics/dashboard-metrics/');
                 if (!data) return;
+
+                // ===== BUYER DASHBOARD RENDERING =====
+                if (data.dashboard_type === 'buyer') {
+                    dashboardMain.classList.add('hidden');
+                    buyerDashboard.classList.remove('hidden');
+
+                    // Set buyer name
+                    const buyerNameEl = document.getElementById('buyerName');
+                    if (buyerNameEl && data.user_profile) {
+                        buyerNameEl.textContent = data.user_profile.name.split(' ')[0] || 'User';
+                    }
+
+                    // Set buyer KPIs
+                    const metrics = data.metrics || {};
+                    document.getElementById('buyerFavCount').textContent = metrics.favorites_count ?? 0;
+                    document.getElementById('buyerSearchCount').textContent = metrics.saved_searches_count ?? 0;
+                    document.getElementById('buyerActiveProps').textContent = metrics.total_active_properties ?? 0;
+                    document.getElementById('buyerAvgPrice').textContent = metrics.avg_market_price || '₹0';
+
+                    // Render recent favorites
+                    const favTableBody = document.getElementById('buyerFavoritesTableBody');
+                    const favorites = data.recent_favorites || [];
+                    if (favorites.length === 0) {
+                        favTableBody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400 text-xs">No favorites yet. Browse properties to start saving!</td></tr>';
+                    } else {
+                        favTableBody.innerHTML = favorites.map(f => `
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                                <td class="py-3.5 pr-4">
+                                    <div class="font-bold text-slate-900 dark:text-white truncate max-w-xs">${f.title}</div>
+                                    <div class="text-[11px] text-slate-400 truncate max-w-xs">${f.address}</div>
+                                </td>
+                                <td class="py-3.5 px-4 font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                    ${f.bedrooms} BHK • ${f.area_sqft} sqft
+                                </td>
+                                <td class="py-3.5 px-4 font-extrabold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                                    ${f.formatted_price}
+                                </td>
+                                <td class="py-3.5 pl-4 text-slate-400 text-[11px] whitespace-nowrap">
+                                    ${f.favorited_at}
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
+
+                    // Render saved searches
+                    const searchesContainer = document.getElementById('buyerSearchesContainer');
+                    const searches = data.recent_searches || [];
+                    if (searches.length === 0) {
+                        searchesContainer.innerHTML = '<div class="py-4 text-center text-slate-400 text-xs">No saved searches yet. Use the map to create search alerts!</div>';
+                    } else {
+                        searchesContainer.innerHTML = searches.map(s => `
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200/60 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition group">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-900 dark:text-white">${s.name}</div>
+                                        <div class="text-[10px] text-slate-400">Created ${s.created_at}</div>
+                                    </div>
+                                </div>
+                                <svg class="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </div>
+                        `).join('');
+                    }
+
+                    return;
+                }
+
+                // ===== AGENT / ADMIN DASHBOARD RENDERING =====
+                buyerDashboard.classList.add('hidden');
+                dashboardMain.classList.remove('hidden');
 
                 // Agent Info
                 if (data.agent_profile) {
@@ -332,13 +580,12 @@
                     `).join('');
                 }
 
-                document.getElementById('lastSyncedText').textContent = `Synced at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
             } catch (err) {
                 console.error('Failed to load dashboard metrics:', err);
                 if (err.status === 403 || err.status === 401) {
                     unauthorizedBanner.classList.remove('hidden');
                     dashboardMain.classList.add('hidden');
+                    buyerDashboard.classList.add('hidden');
                 }
             }
         }

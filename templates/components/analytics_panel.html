@@ -1,0 +1,175 @@
+<!-- Slide-Out Analytics Panel -->
+<div id="analyticsPanelBackdrop" class="fixed inset-0 z-[2500] bg-slate-950/40 backdrop-blur-[2px] hidden transition-opacity lg:bg-transparent lg:pointer-events-none"></div>
+
+<aside id="analyticsPanel"
+       class="fixed top-0 bottom-0 right-0 z-[2501] w-full max-w-sm bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col pointer-events-auto">
+    
+    <!-- Drawer Header -->
+    <div class="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-emerald-50/50 dark:bg-emerald-950/50">
+        <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 flex items-center justify-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+            </div>
+            <div>
+                <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Spatial Market Analytics</h3>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Viewport Data Aggregation</p>
+            </div>
+        </div>
+
+        <button id="closeAnalyticsPanelBtn" type="button" title="Close Analytics"
+                class="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition shadow-sm border border-slate-200 dark:border-slate-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="analyticsLoading" class="hidden flex-grow flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
+        <div class="inline-block w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p class="text-xs font-bold">Computing Spatial Aggregations...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="analyticsError" class="hidden flex-grow flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-6 text-center">
+        <svg class="w-10 h-10 text-rose-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <p class="text-xs font-bold text-rose-600 dark:text-rose-400" id="analyticsErrorMsg">Failed to load analytics.</p>
+    </div>
+
+    <!-- Drawer Content -->
+    <div id="analyticsContent" class="flex-grow overflow-y-auto p-4 space-y-4">
+        
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-2 gap-3">
+            <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Total Assets</p>
+                <div class="text-lg font-black text-slate-900 dark:text-white" id="analyticsTotalProps">0</div>
+            </div>
+            <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Avg Price / Sqft</p>
+                <div class="text-lg font-black text-emerald-600 dark:text-emerald-400" id="analyticsAvgSqft">₹0</div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+            <h4 class="text-xs font-black text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2">Market Valuation</h4>
+            
+            <div class="flex justify-between items-end">
+                <span class="text-xs font-bold text-slate-500">Median Price</span>
+                <span class="text-base font-black text-slate-900 dark:text-white" id="analyticsMedianPrice">₹0</span>
+            </div>
+            
+            <div class="flex justify-between items-end">
+                <span class="text-xs font-bold text-slate-500">Average Price</span>
+                <span class="text-sm font-bold text-slate-700 dark:text-slate-300" id="analyticsAvgPrice">₹0</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 pt-2 mt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                <div>
+                    <span class="block text-[9px] uppercase font-bold text-slate-400">Low</span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400" id="analyticsMinPrice">₹0</span>
+                </div>
+                <div class="text-right">
+                    <span class="block text-[9px] uppercase font-bold text-slate-400">High</span>
+                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400" id="analyticsMaxPrice">₹0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <h4 class="text-xs font-black text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2 mb-3">Asset Distribution</h4>
+            <div id="analyticsTypeBreakdown" class="space-y-2">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center">
+        <span class="text-[10px] font-bold text-slate-400">Updates as map pans</span>
+        <button id="closeAnalyticsFooterBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            Dismiss
+        </button>
+    </div>
+
+</aside>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const panel = document.getElementById('analyticsPanel');
+        const backdrop = document.getElementById('analyticsPanelBackdrop');
+        const closeBtn = document.getElementById('closeAnalyticsPanelBtn');
+        const footerBtn = document.getElementById('closeAnalyticsFooterBtn');
+        
+        window.openAnalyticsPanel = function() {
+            backdrop.classList.remove('hidden');
+            panel.classList.remove('translate-x-full');
+        };
+        
+        window.closeAnalyticsPanel = function() {
+            backdrop.classList.add('hidden');
+            panel.classList.add('translate-x-full');
+        };
+
+        if (closeBtn) closeBtn.addEventListener('click', window.closeAnalyticsPanel);
+        if (footerBtn) footerBtn.addEventListener('click', window.closeAnalyticsPanel);
+        if (backdrop) backdrop.addEventListener('click', window.closeAnalyticsPanel);
+    });
+
+    window.populateAnalyticsPanel = function(data) {
+        document.getElementById('analyticsLoading').classList.add('hidden');
+        document.getElementById('analyticsError').classList.add('hidden');
+        document.getElementById('analyticsContent').classList.remove('hidden');
+
+        const stats = data.stats;
+        document.getElementById('analyticsTotalProps').textContent = stats.total_properties.toLocaleString();
+        document.getElementById('analyticsAvgSqft').textContent = stats.avg_price_sqft ? '₹' + Math.round(stats.avg_price_sqft).toLocaleString('en-IN') : '-';
+        document.getElementById('analyticsMedianPrice').textContent = formatPriceShort(stats.median_price);
+        document.getElementById('analyticsAvgPrice').textContent = formatPriceShort(stats.avg_price);
+        document.getElementById('analyticsMinPrice').textContent = formatPriceShort(stats.min_price);
+        document.getElementById('analyticsMaxPrice').textContent = formatPriceShort(stats.max_price);
+
+        const breakdownContainer = document.getElementById('analyticsTypeBreakdown');
+        if (data.type_breakdown && data.type_breakdown.length > 0) {
+            let html = '';
+            const total = stats.total_properties;
+            data.type_breakdown.forEach(item => {
+                const pct = Math.round((item.count / total) * 100);
+                html += `
+                    <div>
+                        <div class="flex justify-between text-[11px] font-bold mb-1">
+                            <span class="text-slate-700 dark:text-slate-300">${item.property_type}</span>
+                            <span class="text-slate-500">${item.count} (${pct}%)</span>
+                        </div>
+                        <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                            <div class="bg-emerald-500 h-1.5 rounded-full" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            breakdownContainer.innerHTML = html;
+        } else {
+            breakdownContainer.innerHTML = '<p class="text-xs text-slate-400">No data available.</p>';
+        }
+    };
+
+    window.showAnalyticsLoading = function() {
+        document.getElementById('analyticsLoading').classList.remove('hidden');
+        document.getElementById('analyticsError').classList.add('hidden');
+        document.getElementById('analyticsContent').classList.add('hidden');
+    };
+
+    window.showAnalyticsError = function(msg) {
+        document.getElementById('analyticsLoading').classList.add('hidden');
+        document.getElementById('analyticsContent').classList.add('hidden');
+        const errBlock = document.getElementById('analyticsError');
+        errBlock.classList.remove('hidden');
+        document.getElementById('analyticsErrorMsg').textContent = msg || 'Failed to load analytics.';
+    };
+
+    function formatPriceShort(priceNum) {
+        if (!priceNum) return '-';
+        if (priceNum >= 10000000) return `₹${(priceNum / 10000000).toFixed(2)} Cr`;
+        if (priceNum >= 100000) return `₹${(priceNum / 100000).toFixed(2)} L`;
+        return '₹' + priceNum.toLocaleString('en-IN');
+    }
+</script>

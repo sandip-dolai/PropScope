@@ -152,6 +152,10 @@
                     <span class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">Property Map</span>
                 </div>
                 <div class="hidden sm:flex items-center space-x-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    <button id="toggleMarketAnalyticsBtn" type="button" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition font-bold">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+                        <span>Market Analytics</span>
+                    </button>
                     <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span> Click Map for Radius Search</span>
                     <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-purple-500 mr-1.5"></span> Draw Polygon Boundary</span>
                 </div>
@@ -1503,6 +1507,85 @@
             ['recWeightBudget','recWeightBedroom','recWeightArea','recWeightLocation'].forEach(id => {
                 document.getElementById(id).addEventListener('input', updateWeightDisplays);
             });
+        })();
+
+        // --- Market Analytics Heatmap & Panel ---
+        (function() {
+            const toggleAnalyticsBtn = document.getElementById('toggleMarketAnalyticsBtn');
+            let analyticsHeatLayer = null;
+            let analyticsActive = false;
+
+            if (toggleAnalyticsBtn) {
+                toggleAnalyticsBtn.addEventListener('click', async () => {
+                    analyticsActive = !analyticsActive;
+                    if (analyticsActive) {
+                        toggleAnalyticsBtn.classList.remove('bg-emerald-50', 'text-emerald-600', 'dark:bg-emerald-500/10', 'dark:text-emerald-400');
+                        toggleAnalyticsBtn.classList.add('bg-emerald-600', 'text-white', 'dark:bg-emerald-500', 'dark:text-white', 'shadow-md');
+                        
+                        if (window.openAnalyticsPanel) window.openAnalyticsPanel();
+                        if (window.showAnalyticsLoading) window.showAnalyticsLoading();
+                        await fetchAndRenderAnalytics();
+
+                        // Update on pan/zoom
+                        window.leafletMapInstance.on('moveend', fetchAndRenderAnalytics);
+                    } else {
+                        toggleAnalyticsBtn.classList.add('bg-emerald-50', 'text-emerald-600', 'dark:bg-emerald-500/10', 'dark:text-emerald-400');
+                        toggleAnalyticsBtn.classList.remove('bg-emerald-600', 'text-white', 'dark:bg-emerald-500', 'dark:text-white', 'shadow-md');
+                        
+                        if (window.closeAnalyticsPanel) window.closeAnalyticsPanel();
+                        if (analyticsHeatLayer) {
+                            window.leafletMapInstance.removeLayer(analyticsHeatLayer);
+                            analyticsHeatLayer = null;
+                        }
+                        window.leafletMapInstance.off('moveend', fetchAndRenderAnalytics);
+                    }
+                });
+            }
+
+            async function fetchAndRenderAnalytics() {
+                if (!analyticsActive) return;
+                
+                const bounds = window.leafletMapInstance.getBounds();
+                const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
+
+                try {
+                    const [analyticsData, propertiesData] = await Promise.all([
+                        window.apiClient(`/api/v1/properties/analytics/area/?bbox=${bbox}`),
+                        window.apiClient(`/api/v1/properties/bbox-search/?bbox=${bbox}`)
+                    ]);
+
+                    if (analyticsData.error) throw new Error(analyticsData.error);
+                    
+                    if (window.populateAnalyticsPanel) window.populateAnalyticsPanel(analyticsData);
+
+                    // Render Heatmap
+                    if (analyticsHeatLayer) {
+                        window.leafletMapInstance.removeLayer(analyticsHeatLayer);
+                    }
+                    
+                    if (propertiesData.results && propertiesData.results.length > 0) {
+                        const heatPoints = propertiesData.results.map(p => {
+                            const price = p.price || 0;
+                            const weight = Math.min(1.0, (price / 10000000) * 0.8 + 0.2); 
+                            return [p.location.coordinates[1], p.location.coordinates[0], weight];
+                        });
+
+                        // Verify leaflet heat is loaded
+                        if (typeof L.heatLayer === 'function') {
+                            analyticsHeatLayer = L.heatLayer(heatPoints, {
+                                radius: 35,
+                                blur: 25,
+                                maxZoom: 15,
+                                gradient: {0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red'}
+                            }).addTo(window.leafletMapInstance);
+                        }
+                    }
+
+                } catch (err) {
+                    console.error('Analytics Error:', err);
+                    if (window.showAnalyticsError) window.showAnalyticsError('Error computing spatial analytics.');
+                }
+            }
         })();
     });
 </script>

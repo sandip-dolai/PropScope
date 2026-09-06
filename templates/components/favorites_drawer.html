@@ -37,9 +37,11 @@
 
     <!-- Drawer Footer -->
     <div class="p-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between text-xs">
-        <span class="text-[11px] text-slate-500 dark:text-slate-400">
-            Saved to authenticated buyer account
-        </span>
+        <button id="launchCompareBtn" type="button" disabled
+                class="px-3.5 py-2 rounded-xl bg-emerald-500 text-white font-bold transition shadow-sm opacity-50 cursor-not-allowed flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <span>Compare (<span id="compareCountBadge">0</span>)</span>
+        </button>
         <button id="closeFavoritesDrawerFooterBtn" type="button"
                 class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold transition">
             Close
@@ -217,7 +219,14 @@
                     }
 
                     return `
-                        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition space-y-2.5">
+                        <div class="relative p-3.5 pl-10 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition space-y-2.5">
+                            
+                            <!-- Compare Checkbox -->
+                            <div class="absolute left-3.5 top-4 flex items-center h-5">
+                                <input id="compare-checkbox-${prop.id}" type="checkbox" value="${prop.id}" 
+                                       class="compare-checkbox w-4 h-4 text-emerald-600 bg-white border-slate-300 rounded focus:ring-emerald-500 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 dark:focus:ring-emerald-600 transition">
+                            </div>
+
                             <div class="flex items-start justify-between">
                                 <div class="min-w-0 pr-2">
                                     <span class="text-[9px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">${prop.property_type}</span>
@@ -242,6 +251,9 @@
                         </div>
                     `;
                 }).join('');
+
+                bindCompareCheckboxes();
+
             } catch (err) {
                 favoritesListContainer.innerHTML = `
                     <div class="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs text-center">
@@ -250,5 +262,48 @@
                 `;
             }
         }
+
+        // --- Comparison Logic ---
+        function bindCompareCheckboxes() {
+            const checkboxes = document.querySelectorAll('.compare-checkbox');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateCompareButtonState);
+            });
+            updateCompareButtonState();
+        }
+
+        function updateCompareButtonState() {
+            const checkedCount = document.querySelectorAll('.compare-checkbox:checked').length;
+            const compareBtn = document.getElementById('launchCompareBtn');
+            const compareCountBadge = document.getElementById('compareCountBadge');
+            
+            if (compareBtn && compareCountBadge) {
+                compareCountBadge.textContent = checkedCount;
+                if (checkedCount >= 2 && checkedCount <= 4) {
+                    compareBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    compareBtn.classList.add('hover:bg-emerald-600');
+                    compareBtn.disabled = false;
+                } else {
+                    compareBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    compareBtn.classList.remove('hover:bg-emerald-600');
+                    compareBtn.disabled = true;
+                }
+            }
+        }
+
+        const launchCompareBtn = document.getElementById('launchCompareBtn');
+        if (launchCompareBtn) {
+            launchCompareBtn.addEventListener('click', () => {
+                const checkedBoxes = document.querySelectorAll('.compare-checkbox:checked');
+                if (checkedBoxes.length >= 2 && checkedBoxes.length <= 4) {
+                    const ids = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+                    window.closeFavoritesDrawer();
+                    if (window.openCompareModal) {
+                        window.openCompareModal(ids);
+                    }
+                }
+            });
+        }
+    });
     });
 </script>
